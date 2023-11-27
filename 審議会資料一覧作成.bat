@@ -22,13 +22,14 @@ python 207_卸電力市場、需給調整市場及び需給運用の在り方勉強会.py
 python 208_石油・天然ガス小委員会.py
 python 209_水素政策小委員会.py
 python 210_アンモニア等脱炭素燃料政策小委員会.py
-python 211_電力広域的運営推進機関検証ワーキンググループ.py
-python 212_次世代の分散型電力システムに関する検討会.py
+python 211_電力広域的運営推進機関検証ワーキンググループ.py 
+python 212_次世代の分散型電力システムに関する検討会.py 
 python 213_将来の電力需給に関する在り方勉強会.py
 python 214_同時市場の在り方等に関する検討会.py
 python 300_制度設計専門会合.py
 python 301_料金制度専門会合.py
-cd C:\Users\Koichiro_ISHIKAWA\マイドライブ（k.isikawa48016@gmail.com）\010_プライベート\040_勉強・情報収集\010_プログラミングでの自動化\010_審議会資料一覧取得 && ^
-git add . && ^
-git commit -m "%DATE% %TIME% update" && ^
-git push -u origin main  && ^
+python 302_電気料金審査専門会合.py
+python 303_料金制度ワーキング・グループ.py
+python 304_送配電効率化・計画進捗確認ワーキンググループ.py
+python 900_博士人材の産業界への入職経路の多様化に関する勉強会.py
+
