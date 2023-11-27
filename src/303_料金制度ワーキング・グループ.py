@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Oct 24 10:04:38 2022
-# 料金制度専門会合の関係資料一覧のhtml作成
+# 料金制度ワーキング・グループの関係資料一覧のhtml作成
 @author: Koichiro_ISHIKAWA
 """
 
@@ -13,7 +13,7 @@ import requests, bs4
 # -----------------------------------
 # 定数定義
 # -----------------------------------
-NAME_HTML = '料金制度専門会合.html'
+NAME_HTML = '料金制度ワーキング・グループ.html'
 DIR_OUTPUT = r'../egmsc'
 
 # -----------------------------------
@@ -27,11 +27,11 @@ DIR_OUTPUT = r'../egmsc'
 html_txt = '''<!DOCTYPE html>
 <html>
 <head>
-  <title>料金制度専門会合</title>
+  <title>料金制度ワーキング・グループ</title>
   <meta charset="UTF-8">
 </head>
-<h1>料金制度専門会合</h1>
-<a href="https://www.emsc.meti.go.jp/activity/index_electricity.html" target="_blank">委員会ページ</a>
+<h1>料金制度ワーキング・グループ</h1>
+<a href="https://www.emsc.meti.go.jp/activity/index_feesystemwg.html" target="_blank">委員会ページ</a>
 <body>
 {body}
 </body>
@@ -42,8 +42,7 @@ html_txt = '''<!DOCTYPE html>
 body = ''
 
 ## 開催回・資料リンク先の取得
-name_url_list = ['https://www.emsc.meti.go.jp/activity/index_electricity.html', # 直近
-                 'https://www.emsc.meti.go.jp/activity/index_electricitylog.html'] # 過去分
+name_url_list = ['https://www.emsc.meti.go.jp/activity/index_feesystemwg.html']
 
 for name_url in name_url_list:
     # html取得
@@ -138,8 +137,8 @@ for name_url in name_url_list:
             # コンテンツを収納
             body_n_com = body_n_com.format(title = title, gijiroku = gijiroku, papers = html_papers)
                         
-            # bodyに追記（新しい回ほど、後ろに追加していく）
-            body = body + body_n_com
+            # bodyに追記（新しい回ほど、前に追加していく）
+            body = body_n_com + body
         
 # bodyを挿入
 html_txt = html_txt.format(body = body)

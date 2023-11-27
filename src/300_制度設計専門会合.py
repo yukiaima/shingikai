@@ -42,8 +42,8 @@ html_txt = '''<!DOCTYPE html>
 body = ''
 
 ## 開催回・資料リンク先の取得
-name_url_list = ['https://www.emsc.meti.go.jp/activity/index_systemlog.html', # 50回以前
-                 'https://www.emsc.meti.go.jp/activity/index_system.html'] # 51回以降
+name_url_list = ['https://www.emsc.meti.go.jp/activity/index_system.html', # 直近
+                 'https://www.emsc.meti.go.jp/activity/index_systemlog.html'] # 過去分
 
 for name_url in name_url_list:
     # html取得
@@ -76,7 +76,7 @@ for name_url in name_url_list:
             gijiroku_hina = '<li><a href="{href}"  target="_blank">{txt}</a></li>'
             
             for td in tr.find_all('td'):
-                if (td.get_text(strip=True) != '配布資料'): # 配布資料以外
+                if (td.get_text(strip=True) != '配付資料') and (td.get_text(strip=True) != '配布資料'): # 配布資料以外
                     if ''.join([a.get('href') for a in td.find_all('a')]) == '': # urlなし
                         title += td.get_text(strip=True)
                         
@@ -138,8 +138,8 @@ for name_url in name_url_list:
             # コンテンツを収納
             body_n_com = body_n_com.format(title = title, gijiroku = gijiroku, papers = html_papers)
                         
-            # bodyに追記（新しい回ほど、前に追加していく）
-            body = body_n_com + body
+            # bodyに追記（新しい回ほど、後ろに追加していく）
+            body = body + body_n_com
 
 # bodyを挿入
 html_txt = html_txt.format(body = body)
