@@ -1,4 +1,4 @@
-cd C:\Users\Koichiro_ISHIKAWA\ãƒã‚¤ãƒ‰ãƒ©ã‚¤ãƒ–ï¼ˆk.isikawa48016@gmail.comï¼‰\010_ãƒ—ãƒ©ã‚¤ãƒ™ãƒ¼ãƒˆ\040_å‹‰å¼·ãƒ»æƒ…å ±åé›†\010_ãƒ—ãƒ­ã‚°ãƒ©ãƒŸãƒ³ã‚°ã§ã®è‡ªå‹•åŒ–\010_å¯©è­°ä¼šè³‡æ–™ä¸€è¦§å–å¾—
+cd C:\Users\Koichiro_ISHIKAWA\ƒ}ƒCƒhƒ‰ƒCƒuik.isikawa48016@gmail.comj\010_ƒvƒ‰ƒCƒx[ƒg\040_•×‹­Eî•ñûW\010_ƒvƒƒOƒ‰ƒ~ƒ“ƒO‚Å‚Ì©“®‰»\010_R‹c‰ï‘—¿ˆê——æ“¾
 git add .
 git commit -m '%DATE% %TIME% update'
 git push -u origin main
