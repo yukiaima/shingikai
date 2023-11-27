@@ -28,8 +28,8 @@ python 213_将来の電力需給に関する在り方勉強会.py
 python 214_同時市場の在り方等に関する検討会.py
 python 300_制度設計専門会合.py
 python 301_料金制度専門会合.py
-cd C:\Users\Koichiro_ISHIKAWA\マイドライブ（k.isikawa48016@gmail.com）\010_プライベート\040_勉強・情報収集\010_プログラミングでの自動化\010_審議会資料一覧取得
-git add .
-git commit -m '%DATE% %TIME% update'
-git push -u origin main
+cd C:\Users\Koichiro_ISHIKAWA\マイドライブ（k.isikawa48016@gmail.com）\010_プライベート\040_勉強・情報収集\010_プログラミングでの自動化\010_審議会資料一覧取得 && ^
+git add . && ^
+git commit -m "%DATE% %TIME% update" && ^
+git push -u origin main  && ^
 @rem pause
