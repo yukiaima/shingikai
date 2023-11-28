@@ -1,5 +1,8 @@
-cd src
+pause
+cd src && ^
+pause
 python 100_Žù‹‹’²®ŽsêŒŸ“¢¬ˆÏˆõ‰ï.py
+pause
 python 101_’²®—Í‚Ì×•ª‰»‹y‚ÑLˆæ’²’B‚Ì‹Zp“IŒŸ“¢‚ÉŠÖ‚·‚éì‹Æ‰ï.py
 python 102_’²®—Í‹y‚ÑŽù‹‹ƒoƒ‰ƒ“ƒX•]‰¿“™‚ÉŠÖ‚·‚éˆÏˆõ‰ï.py
 python 103_LˆæŒn“®”õˆÏˆõ‰ï.py
