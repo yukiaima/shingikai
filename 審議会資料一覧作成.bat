@@ -1,8 +1,10 @@
-pause
-cd src && ^
-pause
+@echo on
+setlocal
+rem pythonソースコードのディレクトリへ移動
+cd src
+
+rem pythonコードを実行
 python 100_需給調整市場検討小委員会.py
-pause
 python 101_調整力の細分化及び広域調達の技術的検討に関する作業会.py
 python 102_調整力及び需給バランス評価等に関する委員会.py
 python 103_広域系統整備委員会.py
@@ -36,3 +38,12 @@ python 303_料金制度ワーキング・グループ.py
 python 304_送配電効率化・計画進捗確認ワーキンググループ.py
 python 900_博士人材の産業界への入職経路の多様化に関する勉強会.py
 
+rem 元のディレクトリへ移動
+cd ..
+
+rem githubへpush
+git add . && ^
+git commit -m "%DATE% %TIME% update" && ^
+git push -u origin main  && ^
+
+exit /b 0
