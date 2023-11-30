@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Oct 24 10:04:38 2022
-# マージン検討会の関係資料一覧のhtml作成
+# 将来の電力需給シナリオに関する検討会の関係資料一覧のhtml作成
 @author: Koichiro_ISHIKAWA
 """
 
@@ -13,7 +13,7 @@ import requests, bs4
 # -----------------------------------
 # 定数定義
 # -----------------------------------
-NAME_HTML = 'マージン検討会.html'
+NAME_HTML = '将来の電力需給シナリオに関する検討会.html'
 DIR_OUTPUT = r'../occto'
 
 # -----------------------------------
@@ -42,7 +42,7 @@ def conv_abs_url(url_obj, url_page):
 html_txt = '''<!DOCTYPE html>
 <html>
 <head>
-  <title>マージン検討会</title>
+  <title>将来の電力需給シナリオに関する検討会</title>
   <meta charset="UTF-8">
 </head>
 <body>
@@ -52,11 +52,11 @@ html_txt = '''<!DOCTYPE html>
 '''
 
 # 見出し1
-body = '''<h1>マージン検討会</h1>
-<a href="https://www.occto.or.jp/iinkai/margin/index.html" target="_blank">委員会ページ</a>'''
+body = '''<h1>将来の電力需給シナリオに関する検討会</h1>
+<a href="https://www.occto.or.jp/iinkai/shorai_jukyu/index.html" target="_blank">委員会ページ</a>'''
 
 # 情報を取得する対象ページ（今年度）
-name_url = 'https://www.occto.or.jp/iinkai/margin/index.html'
+name_url = 'https://www.occto.or.jp/iinkai/shorai_jukyu/index.html'
 
 # 過去分の情報を入れておく配列
 old_url_list = []
