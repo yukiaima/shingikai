@@ -15,6 +15,8 @@ import requests, bs4
 # -----------------------------------
 NAME_HTML = '地内系統の混雑管理に関する勉強会.html'
 DIR_OUTPUT = r'../occto'
+CONNECT_TIMEOUT = 30 # html接続のタイムアウト
+READ_TIMEOUT = 30 # html読み込みのタイムアウト
 
 # -----------------------------------
 # 関数
@@ -47,7 +49,7 @@ name_url = 'https://www.occto.or.jp/iinkai/masutapuran/index.html#konzatsu'
 old_url_list = []
 
 # html取得
-res = requests.get(name_url)
+res = requests.get(name_url, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT))
 
 if res.status_code == 404: # ページ接続出来なかった場合
     print(res.status_code, name_url) # URLアクセス状況表示 
@@ -126,7 +128,7 @@ else: # ページ接続出来た場合
                                 # 資料ページから情報取得
                                 
                                 # html取得
-                                res_papers = requests.get(papers_url)
+                                res_papers = requests.get(papers_url, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT))
                     
                                 if res_papers.status_code == 404: # ページ接続出来なかった場合
                                     print(res_papers.status_code, papers_url) # URLアクセス状況表示
@@ -177,7 +179,7 @@ else: # ページ接続出来た場合
 # 情報を取得する対象ページ（過去分）
 for name_url in old_url_list:
     # html取得
-    res = requests.get(name_url)
+    res = requests.get(name_url, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT))
     
     if res.status_code == 404: # ページ接続出来なかった場合
         print(res.status_code, name_url) # URLアクセス状況表示 
@@ -237,7 +239,7 @@ for name_url in old_url_list:
                     # 資料ページから情報取得
                     
                     # html取得
-                    res_papers = requests.get(papers_url)
+                    res_papers = requests.get(papers_url, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT))
         
                     if res_papers.status_code == 404: # ページ接続出来なかった場合
                         print(res_papers.status_code, papers_url) # URLアクセス状況表示

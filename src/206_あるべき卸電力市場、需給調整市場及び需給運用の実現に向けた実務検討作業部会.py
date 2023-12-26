@@ -15,6 +15,8 @@ import requests, bs4
 # -----------------------------------
 NAME_HTML = 'あるべき卸電力市場、需給調整市場及び需給運用の実現に向けた実務検討作業部会.html'
 DIR_OUTPUT = r'../meti'
+CONNECT_TIMEOUT = 30 # html接続のタイムアウト
+READ_TIMEOUT = 30 # html読み込みのタイムアウト
 
 # -----------------------------------
 # 関数
@@ -44,7 +46,7 @@ body = '''<h1>あるべき卸電力市場、需給調整市場及び需給運用
 name_url = 'https://www.meti.go.jp/shingikai/energy_environment/oroshi_jukyu_kento/index.html'
 
 # html取得
-res = requests.get(name_url)
+res = requests.get(name_url, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT))
 
 if res.status_code == 404: # ページ接続出来なかった場合
     print(res.status_code, name_url) # URLアクセス状況表示 
@@ -82,7 +84,7 @@ else: # ページ接続出来た場合
             html_papers = ''
             
             # html取得
-            res_papers = requests.get(papers_url)
+            res_papers = requests.get(papers_url, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT))
 
             if res_papers.status_code == 404: # ページ接続出来なかった場合
                 print(res_papers.status_code, papers_url) # URLアクセス状況表示

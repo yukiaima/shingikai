@@ -15,6 +15,8 @@ import requests, bs4
 # -----------------------------------
 NAME_HTML = '料金制度専門会合.html'
 DIR_OUTPUT = r'../egmsc'
+CONNECT_TIMEOUT = 30 # html接続のタイムアウト
+READ_TIMEOUT = 30 # html読み込みのタイムアウト
 
 # -----------------------------------
 # 関数
@@ -47,7 +49,7 @@ name_url_list = ['https://www.emsc.meti.go.jp/activity/index_electricity.html', 
 
 for name_url in name_url_list:
     # html取得
-    res = requests.get(name_url)
+    res = requests.get(name_url, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT))
     
     if res.status_code == 404: # ページ接続出来なかった場合
         print(res.status_code, name_url) # URLアクセス状況表示 
@@ -108,7 +110,7 @@ for name_url in name_url_list:
                     # 資料ページから情報取得
                     
                     # html取得
-                    res_papers = requests.get(papers_url)
+                    res_papers = requests.get(papers_url, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT))
         
                     if res_papers.status_code == 404: # ページ接続出来なかった場合
                         print(res_papers.status_code, papers_url) # URLアクセス状況表示
