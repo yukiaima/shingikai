@@ -3,7 +3,7 @@ setlocal
 rem pythonƒ\[ƒXƒR[ƒh‚ÌƒfƒBƒŒƒNƒgƒŠ‚ÖˆÚ“®
 cd src
 
-rem pythonƒR[ƒh‚ðŽÀs
+rem pythonƒR[ƒh‚ðŽÀs ¦I‚í‚Á‚½‚à‚Ì‚ÍXV‚µ‚È‚¢
 python 100_Žù‹‹’²®ŽsêŒŸ“¢¬ˆÏˆõ‰ï.py
 python 101_’²®—Í‚Ì×•ª‰»‹y‚ÑLˆæ’²’B‚Ì‹Zp“IŒŸ“¢‚ÉŠÖ‚·‚éì‹Æ‰ï.py
 python 102_’²®—Í‹y‚ÑŽù‹‹ƒoƒ‰ƒ“ƒX•]‰¿“™‚ÉŠÖ‚·‚éˆÏˆõ‰ï.py
@@ -12,32 +12,32 @@ python 104_Lˆæ˜AŒnŒn“‚Ìƒ}ƒXƒ^[ƒvƒ‰ƒ“‹y‚ÑŒn“—˜—pƒ‹[ƒ‹‚ÌÝ‚è•û“™‚ÉŠÖ‚·‚éŒŸ“¢ˆ
 python 105_—e—ÊŽsê‚ÌÝ‚è•û“™‚ÉŠÖ‚·‚éŒŸ“¢‰ïE•×‹­‰ï.py
 python 106_’nˆæŠÔ˜AŒnü‹y‚Ñ’n“à‘—“dŒn“‚Ì—˜—pƒ‹[ƒ‹“™‚ÉŠÖ‚·‚éŒŸ“¢‰ï.py
 python 107_ƒOƒŠƒbƒhƒR[ƒhŒŸ“¢‰ï.py
-python 108_“d—ÍƒŒƒWƒŠƒGƒ“ƒX“™‚ÉŠÖ‚·‚é¬ˆÏˆõ‰ï.py
-python 109_’n“àŒn“‚Ì¬ŽGŠÇ—‚ÉŠÖ‚·‚é•×‹­‰ï.py
+rem python 108_“d—ÍƒŒƒWƒŠƒGƒ“ƒX“™‚ÉŠÖ‚·‚é¬ˆÏˆõ‰ï.py
+rem python 109_’n“àŒn“‚Ì¬ŽGŠÇ—‚ÉŠÖ‚·‚é•×‹­‰ï.py
 python 110_‰^—p—e—ÊŒŸ“¢‰ï.py
 python 111_ƒ}[ƒWƒ“ŒŸ“¢‰ï.py
 python 112_«—ˆ‚Ì“d—ÍŽù‹‹ƒVƒiƒŠƒI‚ÉŠÖ‚·‚éŒŸ“¢‰ï.py
 python 200_“d—ÍEƒKƒXŠî–{­ô¬ˆÏˆõ‰ï.py
 python 201_§“xŒŸ“¢ì‹Æ•”‰ï.py
-rem python 202_ƒKƒXŽ–‹Æ§“xŒŸ“¢ƒ[ƒLƒ“ƒOƒOƒ‹[ƒv.py
-rem python 203_Ä¶‰Â”\ƒGƒlƒ‹ƒM[‘å—Ê“±“üEŽŸ¢‘ã“d—Íƒlƒbƒgƒ[ƒN¬ˆÏˆõ‰ï.py
+python 202_ƒKƒXŽ–‹Æ§“xŒŸ“¢ƒ[ƒLƒ“ƒOƒOƒ‹[ƒv.py
+python 203_Ä¶‰Â”\ƒGƒlƒ‹ƒM[‘å—Ê“±“üEŽŸ¢‘ã“d—Íƒlƒbƒgƒ[ƒN¬ˆÏˆõ‰ï.py
 rem python 204_Ž‘±‰Â”\‚È“d—ÍƒVƒXƒeƒ€\’z¬ˆÏˆõ‰ï.py
-rem python 205_Œn“ƒ[ƒLƒ“ƒOƒOƒ‹[ƒv.py
+python 205_Œn“ƒ[ƒLƒ“ƒOƒOƒ‹[ƒv.py
 rem python 206_‚ ‚é‚×‚«‰µ“d—ÍŽsêAŽù‹‹’²®Žsê‹y‚ÑŽù‹‹‰^—p‚ÌŽÀŒ»‚ÉŒü‚¯‚½ŽÀ–±ŒŸ“¢ì‹Æ•”‰ï.py
 rem python 207_‰µ“d—ÍŽsêAŽù‹‹’²®Žsê‹y‚ÑŽù‹‹‰^—p‚ÌÝ‚è•û•×‹­‰ï.py
-rem python 208_Î–ûE“V‘RƒKƒX¬ˆÏˆõ‰ï.py
-rem python 209_…‘f­ô¬ˆÏˆõ‰ï.py
-rem python 210_ƒAƒ“ƒ‚ƒjƒA“™’E’Y‘f”R—¿­ô¬ˆÏˆõ‰ï.py
-rem python 211_“d—ÍLˆæ“I‰^‰c„i‹@ŠÖŒŸØƒ[ƒLƒ“ƒOƒOƒ‹[ƒv.py 
-rem python 212_ŽŸ¢‘ã‚Ì•ªŽUŒ^“d—ÍƒVƒXƒeƒ€‚ÉŠÖ‚·‚éŒŸ“¢‰ï.py 
+python 208_Î–ûE“V‘RƒKƒX¬ˆÏˆõ‰ï.py
+python 209_…‘f­ô¬ˆÏˆõ‰ï.py
+python 210_ƒAƒ“ƒ‚ƒjƒA“™’E’Y‘f”R—¿­ô¬ˆÏˆõ‰ï.py
+python 211_“d—ÍLˆæ“I‰^‰c„i‹@ŠÖŒŸØƒ[ƒLƒ“ƒOƒOƒ‹[ƒv.py 
+python 212_ŽŸ¢‘ã‚Ì•ªŽUŒ^“d—ÍƒVƒXƒeƒ€‚ÉŠÖ‚·‚éŒŸ“¢‰ï.py 
 rem python 213_«—ˆ‚Ì“d—ÍŽù‹‹‚ÉŠÖ‚·‚éÝ‚è•û•×‹­‰ï.py
 python 214_“¯ŽžŽsê‚ÌÝ‚è•û“™‚ÉŠÖ‚·‚éŒŸ“¢‰ï.py
 python 300_§“xÝŒvê–å‰ï‡.py
 python 301_—¿‹à§“xê–å‰ï‡.py
-python 302_“d‹C—¿‹àR¸ê–å‰ï‡.py
-python 303_—¿‹à§“xƒ[ƒLƒ“ƒOEƒOƒ‹[ƒv.py
+rem python 302_“d‹C—¿‹àR¸ê–å‰ï‡.py
+rem python 303_—¿‹à§“xƒ[ƒLƒ“ƒOEƒOƒ‹[ƒv.py
 python 304_‘—”z“dŒø—¦‰»EŒv‰æi’»Šm”Fƒ[ƒLƒ“ƒOƒOƒ‹[ƒv.py
-rem python 900_”ŽŽmlÞ‚ÌŽY‹ÆŠE‚Ö‚Ì“üEŒo˜H‚Ì‘½—l‰»‚ÉŠÖ‚·‚é•×‹­‰ï.py
+python 900_”ŽŽmlÞ‚ÌŽY‹ÆŠE‚Ö‚Ì“üEŒo˜H‚Ì‘½—l‰»‚ÉŠÖ‚·‚é•×‹­‰ï.py
 
 rem Œ³‚ÌƒfƒBƒŒƒNƒgƒŠ‚ÖˆÚ“®
 cd ..

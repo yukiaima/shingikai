@@ -9,14 +9,15 @@ Created on Mon Oct 24 10:04:38 2022
 # モジュールよみこみ
 # -----------------------------------
 import requests, bs4
+import CONST
 
 # -----------------------------------
 # 定数定義
 # -----------------------------------
 NAME_HTML = '調整力の細分化及び広域調達の技術的検討に関する作業会.html'
 DIR_OUTPUT = r'../occto'
-CONNECT_TIMEOUT = 30 # html接続のタイムアウト
-READ_TIMEOUT = 30 # html読み込みのタイムアウト
+CONNECT_TIMEOUT = CONST.CONNECT_TIMEOUT # html接続のタイムアウト
+READ_TIMEOUT = CONST.READ_TIMEOUT # html読み込みのタイムアウト
 
 # -----------------------------------
 # 関数

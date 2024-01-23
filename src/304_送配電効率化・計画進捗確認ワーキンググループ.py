@@ -9,14 +9,15 @@ Created on Mon Oct 24 10:04:38 2022
 # モジュールよみこみ
 # -----------------------------------
 import requests, bs4
+import CONST
 
 # -----------------------------------
 # 定数定義
 # -----------------------------------
 NAME_HTML = '送配電効率化・計画進捗確認ワーキンググループ.html'
 DIR_OUTPUT = r'../egmsc'
-CONNECT_TIMEOUT = 30 # html接続のタイムアウト
-READ_TIMEOUT = 30 # html読み込みのタイムアウト
+CONNECT_TIMEOUT = CONST.CONNECT_TIMEOUT # html接続のタイムアウト
+READ_TIMEOUT = CONST.READ_TIMEOUT # html読み込みのタイムアウト
 
 # -----------------------------------
 # 関数

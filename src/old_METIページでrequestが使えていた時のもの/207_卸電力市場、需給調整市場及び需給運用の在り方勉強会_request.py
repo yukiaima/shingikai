@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Oct 24 10:04:38 2022
-# 電力・ガス基本政策小委員会の関係資料一覧のhtml作成
+# 卸電力市場、需給調整市場及び需給運用の在り方勉強会の関係資料一覧のhtml作成
 @author: Koichiro_ISHIKAWA
 """
 
@@ -9,14 +9,15 @@ Created on Mon Oct 24 10:04:38 2022
 # モジュールよみこみ
 # -----------------------------------
 import requests, bs4
+import CONST
 
 # -----------------------------------
 # 定数定義
 # -----------------------------------
-NAME_HTML = '電力・ガス基本政策小委員会.html'
+NAME_HTML = '卸電力市場、需給調整市場及び需給運用の在り方勉強会.html'
 DIR_OUTPUT = r'../meti'
-CONNECT_TIMEOUT = 30 # html接続のタイムアウト
-READ_TIMEOUT = 30 # html読み込みのタイムアウト
+CONNECT_TIMEOUT = CONST.CONNECT_TIMEOUT # html接続のタイムアウト
+READ_TIMEOUT = CONST.READ_TIMEOUT # html読み込みのタイムアウト
 
 # -----------------------------------
 # 関数
@@ -29,7 +30,7 @@ READ_TIMEOUT = 30 # html読み込みのタイムアウト
 html_txt = '''<!DOCTYPE html>
 <html>
 <head>
-  <title>電力・ガス基本政策小委員会</title>
+  <title>卸電力市場、需給調整市場及び需給運用の在り方勉強会</title>
   <meta charset="UTF-8">
 </head>
 <body>
@@ -39,11 +40,11 @@ html_txt = '''<!DOCTYPE html>
 '''
 
 # 見出し1
-body = '''<h1>電力・ガス基本政策小委員会</h1>
-<a href="https://www.meti.go.jp/shingikai/enecho/denryoku_gas/denryoku_gas/index.html" target="_blank">委員会ページ</a>'''
+body = '''<h1>卸電力市場、需給調整市場及び需給運用の在り方勉強会</h1>
+<a href="https://www.meti.go.jp/shingikai/energy_environment/oroshi_jukyu/index.html" target="_blank">委員会ページ</a>'''
 
 ## 開催回・資料リンク先の取得
-name_url = 'https://www.meti.go.jp/shingikai/enecho/denryoku_gas/denryoku_gas/index.html'
+name_url = 'https://www.meti.go.jp/shingikai/energy_environment/oroshi_jukyu/index.html'
 
 # html取得
 res = requests.get(name_url, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT))
@@ -59,7 +60,7 @@ else: # ページ接続出来た場合
     # BeautifulSoup（html解析）オブジェクト生成
     soup = bs4.BeautifulSoup(res.content, 'lxml')
     
-    for ul in soup.find('div', {'id': '__main_contents', 'class': 'main w1000'}).find_all('ul', {'class': 'linkE clearfix mb0'}):
+    for ul in soup.find('div', {'id': '__main_contents', 'class': 'main w1000'}).find_all('ul', {'class': 'linkE clearfix'}):
         for li in ul.find_all('li'):
             # 見出し2のタイトル
             h2_title = li.get_text(strip=True)

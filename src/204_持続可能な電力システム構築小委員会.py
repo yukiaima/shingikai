@@ -8,15 +8,19 @@ Created on Mon Oct 24 10:04:38 2022
 # -----------------------------------
 # モジュールよみこみ
 # -----------------------------------
-import requests, bs4
+import os
+import bs4
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
 
 # -----------------------------------
 # 定数定義
 # -----------------------------------
-NAME_HTML = '持続可能な電力システム構築小委員会.html'
+NAME_COMMITTEE = '持続可能な電力システム構築小委員会'
+URL_COMMITTEE = 'https://www.enecho.meti.go.jp/committee/council/basic_policy_subcommittee/#system_kouchiku'
+NAME_HTML = '{}.html'.format(NAME_COMMITTEE)
 DIR_OUTPUT = r'../meti'
-CONNECT_TIMEOUT = 30 # html接続のタイムアウト
-READ_TIMEOUT = 30 # html読み込みのタイムアウト
 
 # -----------------------------------
 # 関数
@@ -25,39 +29,51 @@ READ_TIMEOUT = 30 # html読み込みのタイムアウト
 # -----------------------------------
 # main
 # -----------------------------------
-# 見出し1まで作成
-html_txt = '''<!DOCTYPE html>
-<html>
-<head>
-  <title>持続可能な電力システム構築小委員会</title>
-  <meta charset="UTF-8">
-</head>
-<body>
-{body}
-</body>
-</html>
-'''
-
-# 見出し1
-body = '''<h1>持続可能な電力システム構築小委員会</h1>
-<a href="https://www.enecho.meti.go.jp/committee/council/basic_policy_subcommittee/#system_kouchiku" target="_blank">委員会ページ</a>'''
+# selenium関係の初期設定
+service = ChromeService(ChromeDriverManager().install()) # ドライバを自動でインストールする
+driver = webdriver.Chrome(service=service) # ブラウザ操作・ページの要素検索を行うオブジェクト
 
 ## 開催回・資料リンク先の取得
-name_url = 'https://www.enecho.meti.go.jp/committee/council/basic_policy_subcommittee/#system_kouchiku'
+name_url = URL_COMMITTEE
 
-# html取得
-res = requests.get(name_url, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT))
+# ブラウザでwebページを開く
+driver.get(name_url)
 
-if res.status_code == 404: # ページ接続出来なかった場合
-    print(res.status_code, name_url) # URLアクセス状況表示 
-else: # ページ接続出来た場合
-    #print(res.status_code, name_url) # URLアクセス状況表示  
+# BeautifulSoup（html解析）オブジェクト生成
+soup = bs4.BeautifulSoup(driver.page_source, 'lxml')
+
+# 既に審議会資料一覧のhtmlがある場合、最終更新日と一致するか確認して処理の継続するか判断 ※構築小委のページには更新日情報がない
+flag_proceed = True
+'''
+if os.path.isfile(r'{}\{}'.format(DIR_OUTPUT, NAME_HTML)): 
+    # 現在の審議会資料一覧のhtml取得
+    soup_old = bs4.BeautifulSoup(open(r'{}\{}'.format(DIR_OUTPUT, NAME_HTML), encoding="utf-8"), 'lxml')
     
-    # html取得、異常処理
-    res.raise_for_status()
-    
-    # BeautifulSoup（html解析）オブジェクト生成
-    soup = bs4.BeautifulSoup(res.content, 'lxml')
+    # 現在の審議会資料一覧に最終更新日がある
+    if soup_old.find('div', {'id': 'update'}) != None:
+        # 最終更新日が一致する場合は、処理不要
+        if soup_old.find('div', {'id': 'update'}).get_text(strip=True) == soup.find('div', {'id': '__rdo_update'}).get_text(strip=True):
+            flag_proceed = False
+'''            
+
+if flag_proceed == True:
+    # html骨格の作成
+    html_txt = '''<!DOCTYPE html>
+    <html>
+    <head>
+      <title>{name_committee}</title>
+      <meta charset="UTF-8">
+    </head>
+    <body>
+    {body}
+    </body>
+    </html>
+    '''
+
+    # 見出し1 周辺の作成 ※構築小委のページには更新日情報がない
+    body = '''<h1>{name_committee}</h1>
+    <a href="{url}" target="_blank">委員会ページ</a>
+    '''.format(name_committee = NAME_COMMITTEE, url = URL_COMMITTEE)
     
     for c in soup.find('div', {'id': 'main'}).find('h2', {'id': 'system_kouchiku'}).next_siblings:
         if type(c) is bs4.element.Tag: 
@@ -109,46 +125,37 @@ else: # ページ接続出来た場合
                                 
                             # 資料ページから情報取得
                             
-                            # html取得
-                            res_papers = requests.get(papers_url, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT))
-                
-                            if res_papers.status_code == 404: # ページ接続出来なかった場合
-                                print(res_papers.status_code, papers_url) # URLアクセス状況表示
-                                title += '（取得失敗）'
-                            else: # ページ接続出来た場合
-                                #print(res_papers.status_code, papers_url) # URLアクセス状況表示  
-                                
-                                # html取得、異常処理
-                                res_papers.raise_for_status()
-                                
-                                # BeautifulSoup（html解析）オブジェクト生成
-                                soup_papers = bs4.BeautifulSoup(res_papers.content, 'lxml')
-                                
-                                # lnkLstの情報を加工しながら取り出し
-                                if len(soup_papers.find('div', {'id': 'main'}).find_all('dd')) == 0:
-                                    for ul in soup_papers.find('div', {'id': 'main'}).find_all('ul'):
-                                        # 資料名、資料urlを取り出し
-                                        html_papers += '\n'.join(
-                                            ['<li><a href={} target="_blank">{}</a></li>'.format(
-                                                li.a.get('href') if li.a.get('href')[:4] == 'http' 
-                                                else '{}{}'.format(papers_url[0:9+papers_url[9:].find('/')], li.a.get('href')
-                                                    ) if li.a.get('href')[0] == r'/' else '{}{}'.format(
-                                                        papers_url[0:papers_url.rfind('/')+1], li.a.get('href')
-                                                        ), # 資料url
-                                                li.get_text() # 資料名
-                                                ) for li in ul.find_all('li') if len(li.find_all('a'))!=0])
-                                else: # 古いページ
-                                    for dd in soup_papers.find('div', {'id': 'main'}).find_all('dd'):
-                                        # 資料名、資料urlを取り出し
-                                        html_papers += '\n'.join(
-                                            ['<li><a href={} target="_blank">{}</a></li>'.format(
-                                                a.get('href') if a.get('href')[:4] == 'http' 
-                                                else '{}{}'.format(papers_url[0:9+papers_url[9:].find('/')], a.get('href')
-                                                    ) if a.get('href')[0] == r'/' else '{}{}'.format(
-                                                        papers_url[0:papers_url.rfind('/')+1], a.get('href')
-                                                        ), # 資料url
-                                                dd.get_text() # 資料名
-                                                ) for a in dd.find_all('a') if len(dd.find_all('a'))!=0])
+                            # ブラウザでwebページを開く
+                            driver.get(papers_url)
+                    
+                            # BeautifulSoup（html解析）オブジェクト生成
+                            soup_papers = bs4.BeautifulSoup(driver.page_source, 'lxml')
+                            
+                            # lnkLstの情報を加工しながら取り出し
+                            if len(soup_papers.find('div', {'id': 'main'}).find_all('dd')) == 0:
+                                for ul in soup_papers.find('div', {'id': 'main'}).find_all('ul'):
+                                    # 資料名、資料urlを取り出し
+                                    html_papers += '\n'.join(
+                                        ['<li><a href={} target="_blank">{}</a></li>'.format(
+                                            li.a.get('href') if li.a.get('href')[:4] == 'http' 
+                                            else '{}{}'.format(papers_url[0:9+papers_url[9:].find('/')], li.a.get('href')
+                                                ) if li.a.get('href')[0] == r'/' else '{}{}'.format(
+                                                    papers_url[0:papers_url.rfind('/')+1], li.a.get('href')
+                                                    ), # 資料url
+                                            li.get_text() # 資料名
+                                            ) for li in ul.find_all('li') if len(li.find_all('a'))!=0])
+                            else: # 古いページ
+                                for dd in soup_papers.find('div', {'id': 'main'}).find_all('dd'):
+                                    # 資料名、資料urlを取り出し
+                                    html_papers += '\n'.join(
+                                        ['<li><a href={} target="_blank">{}</a></li>'.format(
+                                            a.get('href') if a.get('href')[:4] == 'http' 
+                                            else '{}{}'.format(papers_url[0:9+papers_url[9:].find('/')], a.get('href')
+                                                ) if a.get('href')[0] == r'/' else '{}{}'.format(
+                                                    papers_url[0:papers_url.rfind('/')+1], a.get('href')
+                                                    ), # 資料url
+                                            dd.get_text() # 資料名
+                                            ) for a in dd.find_all('a') if len(dd.find_all('a'))!=0])
                                 
                     # コンテンツを収納
                     body_n_com = body_n_com.format(title = title, papers = html_papers, annnai_gijiroku = html_annnai)
@@ -159,10 +166,12 @@ else: # ページ接続出来た場合
                     # ind_ddを増やす
                     ind_dd += 1
                         
-# bodyを挿入
-html_txt = html_txt.format(body = body)
-
-# htmlファイルへ書き出し
-with open(r'{}\{}'.format(DIR_OUTPUT, NAME_HTML), 'w', encoding='utf-8' ) as html_file: 
-    html_file.write(html_txt) 
+    # bodyを挿入
+    html_txt = html_txt.format(name_committee = NAME_COMMITTEE, body = body)
     
+    # htmlファイルへ書き出し
+    with open(r'{}\{}'.format(DIR_OUTPUT, NAME_HTML), 'w', encoding='utf-8' ) as html_file: 
+        html_file.write(html_txt) 
+
+# seleniumのオブジェクトを閉じる
+driver.quit()
