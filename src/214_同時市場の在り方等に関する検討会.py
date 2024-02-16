@@ -32,6 +32,7 @@ DIR_OUTPUT = r'../meti'
 # selenium関係の初期設定
 service = ChromeService(ChromeDriverManager().install()) # ドライバを自動でインストールする
 driver = webdriver.Chrome(service=service) # ブラウザ操作・ページの要素検索を行うオブジェクト
+driver.minimize_window() # ウインドウの最小化
 
 ## 開催回・資料リンク先の取得
 name_url = URL_COMMITTEE

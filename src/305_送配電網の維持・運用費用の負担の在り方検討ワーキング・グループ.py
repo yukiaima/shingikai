@@ -31,6 +31,7 @@ DIR_OUTPUT = r'../egmsc'
 # selenium関係の初期設定
 service = ChromeService(ChromeDriverManager().install()) # ドライバを自動でインストールする
 driver = webdriver.Chrome(service=service) # ブラウザ操作・ページの要素検索を行うオブジェクト
+driver.minimize_window() # ウインドウの最小化
 
 # html骨格の作成
 html_txt = '''<!DOCTYPE html>
