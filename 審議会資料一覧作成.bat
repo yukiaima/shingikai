@@ -33,7 +33,7 @@ python 211_電力広域的運営推進機関検証ワーキンググループ.py
 python 212_次世代の分散型電力システムに関する検討会.py 
 rem python 213_将来の電力需給に関する在り方勉強会.py
 python 214_同時市場の在り方等に関する検討会.py
-python 300_制度設計専門会合.py
+rem python 300_制度設計専門会合.py
 python 301_料金制度専門会合.py
 rem python 302_電気料金審査専門会合.py
 rem python 303_料金制度ワーキング・グループ.py

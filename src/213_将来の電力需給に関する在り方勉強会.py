@@ -11,8 +11,6 @@ Created on Mon Oct 24 10:04:38 2022
 import os
 import bs4
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service as ChromeService
-from webdriver_manager.chrome import ChromeDriverManager
 
 # -----------------------------------
 # 定数定義
@@ -30,9 +28,7 @@ DIR_OUTPUT = r'../meti'
 # main
 # -----------------------------------
 # selenium関係の初期設定
-#service = ChromeService(ChromeDriverManager().install()) # ドライバを自動でインストールする
-#driver = webdriver.Chrome(service=service) # ブラウザ操作・ページの要素検索を行うオブジェクト
-driver = webdriver.Chrome(executable_path=r'C:\Users\Koichiro_ISHIKAWA\.wdm\drivers\chromedriver\win64\127.0.6533.119\chromedriver-win32\chromedriver.exe')
+driver = webdriver.Chrome()
 driver.minimize_window() # ウインドウの最小化
 
 ## 開催回・資料リンク先の取得

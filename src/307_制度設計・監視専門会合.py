@@ -10,8 +10,6 @@ Created on Mon Oct 24 10:04:38 2022
 # -----------------------------------
 import bs4
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service as ChromeService
-from webdriver_manager.chrome import ChromeDriverManager
 
 # -----------------------------------
 # 定数定義
@@ -29,9 +27,7 @@ DIR_OUTPUT = r'../egmsc'
 # main
 # -----------------------------------
 # selenium関係の初期設定
-#service = ChromeService(ChromeDriverManager().install()) # ドライバを自動でインストールする
-#driver = webdriver.Chrome(service=service) # ブラウザ操作・ページの要素検索を行うオブジェクト
-driver = webdriver.Chrome(executable_path=r'C:\Users\Koichiro_ISHIKAWA\.wdm\drivers\chromedriver\win64\127.0.6533.119\chromedriver-win32\chromedriver.exe')
+driver = webdriver.Chrome()
 driver.minimize_window() # ウインドウの最小化
 
 # html骨格の作成
@@ -42,18 +38,18 @@ html_txt = '''<!DOCTYPE html>
   <meta charset="UTF-8">
 </head>
 <body>
-<h1>{name_committee}</h1>
-<a href="{url}" target="_blank">委員会ページ</a>
 {body}
 </body>
 </html>
 '''
 
-# 本文用の変数
-body = ''
+# 見出し1 周辺の作成
+body = '''<h1>{name_committee}</h1>
+<a href="{url}" target="_blank">委員会ページ</a>
+'''.format(name_committee = NAME_COMMITTEE, url = URL_COMMITTEE)
 
 ## 開催回・資料リンク先の取得
-name_url_list = ['https://www.emsc.meti.go.jp/activity/index_systemsurveillance.html']
+name_url_list = ['https://www.emsc.meti.go.jp/activity/index_systemsurveillance.html'] 
 
 for name_url in name_url_list:
     ## 開催回・資料リンク先の取得
@@ -64,9 +60,9 @@ for name_url in name_url_list:
 
     # BeautifulSoup（html解析）オブジェクト生成
     soup = bs4.BeautifulSoup(driver.page_source, 'lxml')
-    
+        
     # 回ごとに処理
-    for tr in soup.find('table', {'class': 'tableLayout borderdot'}).find_all('tr'):
+    for tr in soup.find('table', {'class': 'tableLayout borderdot', 'summary': '制度設計専門会合 開催一覧'}).find_all('tr'):
         # 開催回ごとのhtml文
         body_n_com = '''
         <h2>{title}</h2>
@@ -120,6 +116,7 @@ for name_url in name_url_list:
                 
                 # lnkLstの情報を加工しながら取り出し
                 ul = soup_papers.find('div', {'id': 'meti_or'}).find('ul', {'class': 'lnkLst'})
+                
                 # 資料名、資料urlを取り出し
                 html_papers += '\n'.join(
                     ['<li><a href={} target="_blank">{}</a></li>'.format(
@@ -134,11 +131,11 @@ for name_url in name_url_list:
         # コンテンツを収納
         body_n_com = body_n_com.format(title = title, gijiroku = gijiroku, papers = html_papers)
                     
-        # bodyに追記（新しい回ほど、前に追加していく）
-        body = body_n_com + body
-        
+        # bodyに追記（新しい回ほど、後ろに追加していく）
+        body = body + body_n_com
+
 # bodyを挿入
-html_txt = html_txt.format(name_committee = NAME_COMMITTEE, url = URL_COMMITTEE, body = body)
+html_txt = html_txt.format(name_committee = NAME_COMMITTEE, body = body)
 
 # htmlファイルへ書き出し
 with open(r'{}\{}'.format(DIR_OUTPUT, NAME_HTML), 'w', encoding='utf-8' ) as html_file: 
