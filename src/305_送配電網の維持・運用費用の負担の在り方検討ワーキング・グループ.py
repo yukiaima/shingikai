@@ -15,7 +15,7 @@ from selenium import webdriver
 # 定数定義
 # -----------------------------------
 NAME_COMMITTEE = '送配電網の維持・運用費用の負担の在り方検討ワーキング・グループ'
-URL_COMMITTEE = 'https://www.emsc.meti.go.jp/activity/index_network.html'
+URL_COMMITTEE = 'https://www.egc.meti.go.jp/activity/index_optimize.html'
 NAME_HTML = '{}.html'.format(NAME_COMMITTEE)
 DIR_OUTPUT = r'../egmsc'
 
@@ -49,7 +49,7 @@ html_txt = '''<!DOCTYPE html>
 body = ''
 
 ## 開催回・資料リンク先の取得
-name_url_list = ['https://www.emsc.meti.go.jp/activity/index_network.html']
+name_url_list = ['https://www.egc.meti.go.jp/activity/index_optimize.html']
 
 for name_url in name_url_list:
     ## 開催回・資料リンク先の取得
@@ -130,8 +130,8 @@ for name_url in name_url_list:
         # コンテンツを収納
         body_n_com = body_n_com.format(title = title, gijiroku = gijiroku, papers = html_papers)
                     
-        # bodyに追記（新しい回ほど、前に追加していく）
-        body = body_n_com + body
+        # bodyに追記
+        body = body + body_n_com
         
 # bodyを挿入
 html_txt = html_txt.format(name_committee = NAME_COMMITTEE, url = URL_COMMITTEE, body = body)

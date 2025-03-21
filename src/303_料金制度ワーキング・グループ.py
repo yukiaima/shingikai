@@ -15,7 +15,7 @@ from selenium import webdriver
 # 定数定義
 # -----------------------------------
 NAME_COMMITTEE = '料金制度ワーキング・グループ'
-URL_COMMITTEE = 'https://www.emsc.meti.go.jp/activity/index_feesystemwg.html'
+URL_COMMITTEE = 'https://www.egc.meti.go.jp/activity/index_feesystemwg.html'
 NAME_HTML = '{}.html'.format(NAME_COMMITTEE)
 DIR_OUTPUT = r'../egmsc'
 
@@ -44,7 +44,7 @@ html_txt = '''<!DOCTYPE html>
 '''
 
 ## 開催回・資料リンク先の取得
-name_url_list = ['https://www.emsc.meti.go.jp/activity/index_feesystemwg.html']
+name_url_list = ['https://www.egc.meti.go.jp/activity/index_feesystemwg.html']
 
 # 本文部分
 body = ''

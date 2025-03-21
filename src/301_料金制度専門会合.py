@@ -15,7 +15,7 @@ from selenium import webdriver
 # 定数定義
 # -----------------------------------
 NAME_COMMITTEE = '料金制度専門会合'
-URL_COMMITTEE = 'https://www.emsc.meti.go.jp/activity/index_electricity.html'
+URL_COMMITTEE = 'https://www.egc.meti.go.jp/activity/index_electricity.html'
 NAME_HTML = '{}.html'.format(NAME_COMMITTEE)
 DIR_OUTPUT = r'../egmsc'
 
@@ -49,8 +49,11 @@ body = '''<h1>{name_committee}</h1>
 '''.format(name_committee = NAME_COMMITTEE, url = URL_COMMITTEE)
 
 ## 開催回・資料リンク先の取得
-name_url_list = ['https://www.emsc.meti.go.jp/activity/index_electricity.html', # 直近
-                 'https://www.emsc.meti.go.jp/activity/index_electricitylog.html'] # 過去分
+name_url_list = ['https://www.egc.meti.go.jp/activity/index_electricity.html', # 直近
+                 'https://www.egc.meti.go.jp/activity/index_electricitylog4.html', 
+                 'https://www.egc.meti.go.jp/activity/index_electricitylog3.html', 
+                 'https://www.egc.meti.go.jp/activity/index_electricitylog2.html', 
+                 'https://www.egc.meti.go.jp/activity/index_electricitylog1.html']
 
 for name_url in name_url_list:
     ## 開催回・資料リンク先の取得
@@ -62,8 +65,14 @@ for name_url in name_url_list:
     # BeautifulSoup（html解析）オブジェクト生成
     soup = bs4.BeautifulSoup(driver.page_source, 'lxml')
     
+    # summaryの内容が間違っているページがあるので、それに合わせて変更
+    if len(soup.find_all('table', {'class': 'tableLayout borderdot', 'summary': '制度設計専門会合 開催一覧'})) > 0:
+        content_summary = '制度設計専門会合 開催一覧'
+    else:
+        content_summary = '料金制度専門会合 開催一覧'
+    
     # 回ごとに処理
-    for tr in soup.find('table', {'class': 'tableLayout borderdot'}).find_all('tr'):
+    for tr in soup.find('table', {'class': 'tableLayout borderdot', 'summary': content_summary}).find_all('tr'):
         # 開催回ごとのhtml文
         body_n_com = '''
         <h2>{title}</h2>

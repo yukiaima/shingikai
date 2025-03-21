@@ -15,7 +15,7 @@ from selenium import webdriver
 # 定数定義
 # -----------------------------------
 NAME_COMMITTEE = '制度設計専門会合'
-URL_COMMITTEE = 'https://www.emsc.meti.go.jp/activity/index_system.html'
+URL_COMMITTEE = 'https://www.egc.meti.go.jp/activity/index_system.html'
 NAME_HTML = '{}.html'.format(NAME_COMMITTEE)
 DIR_OUTPUT = r'../egmsc'
 
@@ -49,8 +49,17 @@ body = '''<h1>{name_committee}</h1>
 '''.format(name_committee = NAME_COMMITTEE, url = URL_COMMITTEE)
 
 ## 開催回・資料リンク先の取得
-name_url_list = ['https://www.emsc.meti.go.jp/activity/index_system.html', # 直近
-                 'https://www.emsc.meti.go.jp/activity/index_systemlog.html'] # 過去分
+name_url_list = ['https://www.egc.meti.go.jp/activity/index_system.html', # 直近
+                 'https://www.egc.meti.go.jp/activity/index_systemlog9.html', 
+                 'https://www.egc.meti.go.jp/activity/index_systemlog8.html',
+                 'https://www.egc.meti.go.jp/activity/index_systemlog7.html',
+                 'https://www.egc.meti.go.jp/activity/index_systemlog6.html',
+                 'https://www.egc.meti.go.jp/activity/index_systemlog5.html',
+                 'https://www.egc.meti.go.jp/activity/index_systemlog4.html',
+                 'https://www.egc.meti.go.jp/activity/index_systemlog3.html',
+                 'https://www.egc.meti.go.jp/activity/index_systemlog2.html',
+                 'https://www.egc.meti.go.jp/activity/index_systemlog1.html'
+                 ] # 過去分
 
 for name_url in name_url_list:
     ## 開催回・資料リンク先の取得
