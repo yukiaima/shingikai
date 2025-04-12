@@ -59,7 +59,8 @@ python 900_博士人材の産業界への入職経路の多様化に関する勉強会.py
 rem 元のディレクトリへ移動
 cd ..
 
-rem githubへpush
+rem githubからpullとpush
+git pull origin main && ^
 git add . && ^
 git commit -m "%DATE% %TIME% update" && ^
 git push -u origin main  
