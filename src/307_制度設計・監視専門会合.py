@@ -49,7 +49,8 @@ body = '''<h1>{name_committee}</h1>
 '''.format(name_committee = NAME_COMMITTEE, url = URL_COMMITTEE)
 
 ## 開催回・資料リンク先の取得
-name_url_list = ['https://www.egc.meti.go.jp/activity/index_systemsurveillance.html'] 
+name_url_list = ['https://www.egc.meti.go.jp/activity/index_systemsurveillance.html', #直近
+                 'https://www.egc.meti.go.jp/activity/index_systemsurveillancelog1.html'] 
 
 for name_url in name_url_list:
     ## 開催回・資料リンク先の取得
@@ -60,9 +61,25 @@ for name_url in name_url_list:
 
     # BeautifulSoup（html解析）オブジェクト生成
     soup = bs4.BeautifulSoup(driver.page_source, 'lxml')
+    
+    # summary
+    try:
+        name_summary = '制度設計専門会合 開催一覧'
+        soup.find('table', {'class': 'tableLayout borderdot', 'summary': name_summary}).find_all('tr')
+    except:
+        name_summary = ''
+    
+    try:
+        name_summary = '制度設計・監視専門会合 開催一覧'
+        soup.find('table', {'class': 'tableLayout borderdot', 'summary': name_summary}).find_all('tr')
+    except:
+        name_summary = ''
+        
+    if name_summary == '':
+        continue
         
     # 回ごとに処理
-    for tr in soup.find('table', {'class': 'tableLayout borderdot', 'summary': '制度設計専門会合 開催一覧'}).find_all('tr'):
+    for tr in soup.find('table', {'class': 'tableLayout borderdot', 'summary': name_summary}).find_all('tr'):
         # 開催回ごとのhtml文
         body_n_com = '''
         <h2>{title}</h2>
