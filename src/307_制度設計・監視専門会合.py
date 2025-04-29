@@ -67,13 +67,11 @@ for name_url in name_url_list:
         name_summary = '制度設計専門会合 開催一覧'
         soup.find('table', {'class': 'tableLayout borderdot', 'summary': name_summary}).find_all('tr')
     except:
-        name_summary = ''
-    
-    try:
-        name_summary = '制度設計・監視専門会合 開催一覧'
-        soup.find('table', {'class': 'tableLayout borderdot', 'summary': name_summary}).find_all('tr')
-    except:
-        name_summary = ''
+        try:
+            name_summary = '制度設計・監視専門会合 開催一覧'
+            soup.find('table', {'class': 'tableLayout borderdot', 'summary': name_summary}).find_all('tr')
+        except:
+            name_summary = ''
         
     if name_summary == '':
         continue
