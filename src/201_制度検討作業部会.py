@@ -148,9 +148,9 @@ if flag_proceed == True:
     # bodyを挿入
     html_txt = html_txt.format(name_committee = NAME_COMMITTEE, body = body)
         
-# htmlファイルへ書き出し
-with open(r'{}\{}'.format(DIR_OUTPUT, NAME_HTML), 'w', encoding='utf-8' ) as html_file: 
-    html_file.write(html_txt) 
+    # htmlファイルへ書き出し
+    with open(r'{}\{}'.format(DIR_OUTPUT, NAME_HTML), 'w', encoding='utf-8' ) as html_file: 
+        html_file.write(html_txt) 
 
 # seleniumのオブジェクトを閉じる
 driver.quit()
