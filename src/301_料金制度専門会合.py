@@ -50,6 +50,7 @@ body = '''<h1>{name_committee}</h1>
 
 ## 開催回・資料リンク先の取得
 name_url_list = ['https://www.egc.meti.go.jp/activity/index_electricity.html', # 直近
+                 'https://www.egc.meti.go.jp/activity/index_electricitylog5.html',
                  'https://www.egc.meti.go.jp/activity/index_electricitylog4.html', 
                  'https://www.egc.meti.go.jp/activity/index_electricitylog3.html', 
                  'https://www.egc.meti.go.jp/activity/index_electricitylog2.html', 
