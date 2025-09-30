@@ -50,6 +50,8 @@ python 229_電力システム改革の検証を踏まえた制度設計ワーキンググループ.py
 python 230_排出量取引制度小委員会.py
 rem python 231_ガスシステム改革小委員会.py
 python 232_製造業ベンチマーク検討WG.py
+python 233_発電ベンチマーク検討WG.py
+python 234_ガス事業環境整備WG.py
 rem python 300_制度設計専門会合.py
 python 301_料金制度専門会合.py
 rem python 302_電気料金審査専門会合.py
