@@ -5,131 +5,123 @@ Created on Mon Oct 24 10:04:38 2022
 @author: Koichiro_ISHIKAWA
 """
 
-# -----------------------------------
-# モジュールよみこみ
-# -----------------------------------
+# -*- coding: utf-8 -*-
 import os
+from pathlib import Path
+from urllib.parse import urljoin
 import bs4
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 
 # -----------------------------------
 # 定数定義
 # -----------------------------------
 NAME_COMMITTEE = '次世代電力・ガス事業基盤構築小委員会'
 URL_COMMITTEE = 'https://www.meti.go.jp/shingikai/enecho/denryoku_gas/jisedai_kiban/index.html'
-NAME_HTML = '{}.html'.format(NAME_COMMITTEE)
-DIR_OUTPUT = r'../meti'
+DIR_OUTPUT = Path('../meti')
+FILE_PATH = DIR_OUTPUT / f"{NAME_COMMITTEE}.html"
 
 # -----------------------------------
-# 関数
+# メイン処理
 # -----------------------------------
+def main():
+    # ディレクトリ作成
+    DIR_OUTPUT.mkdir(parents=True, exist_ok=True)
 
-# -----------------------------------
-# main
-# -----------------------------------
-# selenium関係の初期設定
-driver = webdriver.Chrome()
-driver.minimize_window() # ウインドウの最小化
-
-## 開催回・資料リンク先の取得
-name_url = URL_COMMITTEE
-
-# ブラウザでwebページを開く
-driver.get(name_url)
-
-# BeautifulSoup（html解析）オブジェクト生成
-soup = bs4.BeautifulSoup(driver.page_source, 'lxml')
-
-# 既に審議会資料一覧のhtmlがある場合、最終更新日と一致するか確認して処理の継続するか判断
-flag_proceed = True
-if os.path.isfile(r'{}\{}'.format(DIR_OUTPUT, NAME_HTML)): 
-    # 現在の審議会資料一覧のhtml取得
-    soup_old = bs4.BeautifulSoup(open(r'{}\{}'.format(DIR_OUTPUT, NAME_HTML), encoding="utf-8"), 'lxml')
+    # Selenium設定
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument('--window-size=1920,1080')
+    options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--no-sandbox')
     
-    # 現在の審議会資料一覧に最終更新日がある
-    if soup_old.find('div', {'id': 'update'}) != None:
-        # 最終更新日が一致する場合は、処理不要
-        if soup_old.find('div', {'id': 'update'}).get_text(strip=True) == soup.find('div', {'id': '__rdo_update'}).get_text(strip=True):
-            flag_proceed = False
-            
-if flag_proceed == True:
-    # html骨格の作成
-    html_txt = '''<!DOCTYPE html>
-    <html>
-    <head>
-      <title>{name_committee}</title>
-      <meta charset="UTF-8">
-    </head>
-    <body>
-    {body}
-    </body>
-    </html>
-    '''
+    # ドライバー起動（お手元の動く方式を維持）
+    driver = webdriver.Chrome(options=options)
+    driver.set_page_load_timeout(30)
 
-    # 見出し1 周辺の作成
-    body = '''<h1>{name_committee}</h1>
-    <a href="{url}" target="_blank">委員会ページ</a>
-    <div id="update">
-    <p>{update}</p>
-    </div>
-    '''.format(name_committee = NAME_COMMITTEE, url = URL_COMMITTEE, 
-    update = soup.find('div', {'id': '__rdo_update'}).get_text(strip=True))
-    
-    for ul in soup.find('div', {'id': '__main_contents', 'class': 'main w1000'}).find_all('ul', {'class': ['linkE clearfix mb0', 'linkE clearfix', 'lnkLst mb0']}):
-        for li in ul.find_all('li'):
-            # 見出し2のタイトル
-            h2_title = li.get_text(strip=True)
-            
-            # 資料のあるurl
-            if li.a.get('href')[:4] == 'http':
-                papers_url = li.a.get('href')
-            elif li.a.get('href')[0] == r'/':
-                papers_url = '{}{}'.format(
-                    name_url[0:9+name_url[9:].find('/')], li.a.get('href')) 
-            else: 
-                papers_url = '{}{}'.format(
-                    name_url[0:name_url.rfind('/')+1], li.a.get('href')) 
-                
-            # 資料ページの情報取得
-            # 開催回ごとのhtml文
-            body_n_com = '''
-            <h2>{title}</h2>
-            <ul>{papers}</ul>
-            '''
-            
-            html_papers = ''
-            
-            # ブラウザでwebページを開く
-            driver.get(papers_url)
-    
-            # BeautifulSoup（html解析）オブジェクト生成
+    try:
+        # 親ページ取得
+        driver.get(URL_COMMITTEE)
+        soup = bs4.BeautifulSoup(driver.page_source, 'lxml')
+
+        # 更新確認
+        current_update = soup.find('div', {'id': '__rdo_update'})
+        update_text = current_update.get_text(strip=True) if current_update else "不明"
+
+        if FILE_PATH.exists():
+            with open(FILE_PATH, 'r', encoding="utf-8") as f:
+                soup_old = bs4.BeautifulSoup(f, 'lxml')
+                old_update = soup_old.find('div', {'id': 'update'})
+                if old_update and old_update.get_text(strip=True) == update_text:
+                    print("更新がないため、処理を終了します。")
+                    return
+
+        # HTML生成開始（スタイルを少しだけ整えています）
+        body_content = [
+            f"<h1>{NAME_COMMITTEE}</h1>",
+            f'<a href="{URL_COMMITTEE}" target="_blank">委員会ページ</a>',
+            f'<div id="update"><p>最終更新: {update_text}</p></div><hr>'
+        ]
+
+        # 各開催回のリストを取得
+        main_area = soup.find('div', {'id': '__main_contents'})
+        # METIの構造上、複数のulにまたがることがあるため全て取得
+        links = main_area.find_all('ul', class_=['linkE', 'lnkLst', 'linkE clearfix mb0'])
+
+        target_links = []
+        for ul in links:
+            for li in ul.find_all('li'):
+                if li.a:
+                    target_links.append({
+                        'title': li.get_text(strip=True),
+                        'url': urljoin(URL_COMMITTEE, li.a.get('href'))
+                    })
+
+        for item in target_links:
+            print(f"取得中: {item['title']}")
+            driver.get(item['url'])
             soup_papers = bs4.BeautifulSoup(driver.page_source, 'lxml')
-            
-            # lnkLstの情報を加工しながら取り出し
-            for ul in soup_papers.find('div', {'class': 'main w1000'}).find_all('ul', {'class': 'lnkLst'}):
-                # 資料名、資料urlを取り出し
-                html_papers += '\n'.join(
-                    ['<li><a href={} target="_blank">{}</a></li>'.format(
-                        li.a.get('href') if li.a.get('href')[:4] == 'http' 
-                        else '{}{}'.format(papers_url[0:9+papers_url[9:].find('/')], li.a.get('href')
-                            ) if li.a.get('href')[0] == r'/' else '{}{}'.format(
-                                papers_url[0:papers_url.rfind('/')+1], li.a.get('href')
-                                ), # 資料url
-                        li.a.get_text(strip=True) # 資料名
-                        ) for li in ul.find_all('li') if (len(li.find_all('a'))!=0) and (li.a.get_text(strip=True) != 'ダウンロード（Adobeサイトへ）')])
-                
-            # コンテンツを収納
-            body_n_com = body_n_com.format(title = h2_title, papers = html_papers)
-                        
-            # bodyに追記
-            body += body_n_com
-    
-    # bodyを挿入
-    html_txt = html_txt.format(name_committee = NAME_COMMITTEE, body = body)
-    
-    # htmlファイルへ書き出し
-    with open(r'{}\{}'.format(DIR_OUTPUT, NAME_HTML), 'w', encoding='utf-8' ) as html_file: 
-        html_file.write(html_txt) 
 
-# seleniumのオブジェクトを閉じる
-driver.quit()
+            paper_items = []
+            # 個別ページの資料リストを取得
+            sub_main = soup_papers.find('div', class_='main')
+            if sub_main:
+                paper_lists = sub_main.find_all('ul', class_='lnkLst')
+                for p_ul in paper_lists:
+                    for p_li in p_ul.find_all('li'):
+                        if not p_li.a: continue
+                        text = p_li.a.get_text(strip=True)
+                        if "Adobe" in text or not text: continue
+                        
+                        absolute_href = urljoin(item['url'], p_li.a.get('href'))
+                        paper_items.append(f'<li><a href="{absolute_href}" target="_blank">{text}</a></li>')
+
+            # 開催回ごとのセクションを追加
+            section = f"<h2>{item['title']}</h2><ul>{''.join(paper_items)}</ul>"
+            body_content.append(section)
+
+        # 最終HTMLの組み立て
+        full_html = f"""<!DOCTYPE html>
+<html lang="ja">
+<head>
+<title>{NAME_COMMITTEE}</title>
+<meta charset="UTF-8">
+<style>
+    body {{ font-family: sans-serif; line-height: 1.6; padding: 20px; }}
+    h2 {{ border-bottom: 2px solid #005aad; color: #005aad; margin-top: 30px; }}
+    li {{ margin-bottom: 5px; }}
+</style>
+</head>
+<body>{"".join(body_content)}</body>
+</html>"""
+
+        with open(FILE_PATH, 'w', encoding='utf-8') as f:
+            f.write(full_html)
+        print(f"完了しました。出力先: {FILE_PATH}")
+
+    finally:
+        driver.quit()
+
+if __name__ == "__main__":
+    main()
