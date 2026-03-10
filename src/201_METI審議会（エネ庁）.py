@@ -1,5 +1,8 @@
+import csv
 import os
 import time
+import logging  # 追加
+from datetime import datetime  # 追加
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 import bs4
@@ -10,6 +13,39 @@ class MetiCommitteeScraper:
     def __init__(self, output_dir='../meti'):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # --- ログの設定（追記形式） ---
+        self.log_dir = Path('log')
+        self.log_dir.mkdir(exist_ok=True)
+        log_file = self.log_dir / "latest_log.txt"
+        
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logging.INFO)
+        
+        # 二重出力を防ぐためのハンドラクリア
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+        
+        formatter = logging.Formatter('%(asctime)s - %(message)s', datefmt='%H:%M:%S')
+        
+        # 1. ファイル出力用 (fh: File Handler)
+        fh = logging.FileHandler(log_file, mode='a', encoding='utf-8')
+        fh.setFormatter(formatter)
+        
+        # 2. コンソール出力用 (ch: Console Handler) ← ここが漏れていました
+        ch = logging.StreamHandler()
+        ch.setFormatter(formatter)
+        
+        # 両方のハンドラを追加することで、ファイルと画面の両方にログが出るようになります
+        self.logger.addHandler(fh)
+        self.logger.addHandler(ch)
+        
+        # 区切り線を入れて開始
+        self.logger.info("\n" + "="*50)
+        self.logger.info(f"実行開始: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        self.logger.info("="*50)
+        # ----------------
+
         self.driver = self._setup_driver()
 
     def _setup_driver(self):
@@ -20,17 +56,25 @@ class MetiCommitteeScraper:
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-gpu')
         options.add_argument('--blink-settings=imagesEnabled=false')
+        options.add_argument('--disable-blink-features=AutomationControlled')
         ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         options.add_argument(f'user-agent={ua}')
-        return webdriver.Chrome(options=options)
+        options.page_load_strategy = 'eager'
+        driver = webdriver.Chrome(options=options)
+        driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
+            'source': 'Object.defineProperty(navigator, "webdriver", {get: () => undefined})'
+        })
+        driver.set_page_load_timeout(30)
+        return driver
 
-    def get_soup(self, url, wait_time=1.0):
+    def get_soup(self, url, wait_time=0.8):
         try:
             self.driver.get(url)
             time.sleep(wait_time) 
             return bs4.BeautifulSoup(self.driver.page_source, 'lxml')
-        except:
-            return None
+        except Exception as e:
+            self.logger.warning(f"ページ取得失敗: {url} ({e})")
+            return bs4.BeautifulSoup(self.driver.page_source, 'lxml')
 
     def extract_papers(self, soup, base_url):
         """配布資料ページ等からPDFや動画リンクを抽出"""
@@ -51,8 +95,8 @@ class MetiCommitteeScraper:
                 seen.add(href)
         return links
 
-    def process_committee(self, name, main_url):
-        print(f"\n>>> 実行中: {name}")
+    def process_committee_ENECHO(self, name, main_url):
+        self.logger.info(f"審議会開始: {name}") # loggerに変更
         file_path = self.output_dir / f"{name}.html"
         parsed_url = urlparse(main_url)
         anchor_id = parsed_url.fragment
@@ -104,7 +148,7 @@ class MetiCommitteeScraper:
                         
                         if any(kw in link_text for kw in ["配布資料", "配付資料"]):
                             # 子ページ（配布資料ページ）の解析
-                            print(f"    解析中: {row_title}")
+                            self.logger.info(f"    解析中: {row_title}")
                             sub_soup = self.get_soup(sub_url, wait_time=0.6)
                             if sub_soup:
                                 row_links.extend(self.extract_papers(sub_soup, sub_url))
@@ -119,32 +163,42 @@ class MetiCommitteeScraper:
                         body_content.append(f"<h2>{row_title}</h2><ul>{''.join(row_links)}</ul>")
 
         self.save_html(file_path, name, "".join(body_content))
+        self.logger.info(f"    完了: {file_path.name}")
 
     def save_html(self, file_path, name, body):
         html = f"""<!DOCTYPE html><html lang="ja"><head><title>{name}</title><meta charset="UTF-8">
-        <style>body{{font-family:sans-serif;line-height:1.6;padding:30px;max-width:1100px;margin:auto;color:#333;background:#f9f9f9;}}
-        .container{{background:#fff;padding:40px;box-shadow:0 2px 10px rgba(0,0,0,0.1);border-radius:8px;}}
-        h1{{border-left:10px solid #005aad;padding-left:15px;font-size:26px;color:#005aad;margin-bottom:20px;}}
-        h2{{border-bottom:2px solid #005aad;color:#005aad;margin-top:40px;font-size:18px;background:rgba(0,90,173,0.05);padding:8px 12px;}}
-        li{{margin-bottom:8px;}}a{{color:#005aad;text-decoration:none;}}a:hover{{text-decoration:underline;}}
-        hr{{border:0;border-top:1px solid #ddd;margin:20px 0;}}</style>
-        </head><body><div class="container">{body}</div></body></html>"""
+        <style>body{{font-family:sans-serif;line-height:1.6;padding:30px;max-width:1000px;margin:auto;color:#333;}}
+        h1{{border-left:10px solid #005aad;padding-left:15px;font-size:24px;color:#005aad;}}
+        h2{{border-bottom:2px solid #005aad;color:#005aad;margin-top:40px;font-size:18px;}}
+        a{{color:#005aad;text-decoration:none;}}a:hover{{text-decoration:underline;}}</style>
+        </head><body>{body}</body></html>"""
         with open(file_path, 'w', encoding='utf-8') as f: f.write(html)
 
-    def close(self): self.driver.quit()
+    def close(self):
+        self.logger.info("WebDriverを終了します。")
+        self.driver.quit()
 
+# --- メイン処理 ---
 if __name__ == "__main__":
-    # これまで対応した、およびご要望の審議会リスト
-    COMMITTEES = [
-        {"name": "基本政策分科会", "url": "https://www.enecho.meti.go.jp/committee/council/basic_policy_subcommittee/"},
-        {"name": "発電コスト検証ワーキンググループ", "url": "https://www.enecho.meti.go.jp/committee/council/basic_policy_subcommittee/#cost_wg"},
-        {"name": "持続可能な電力システム構築小委員会", "url": "https://www.enecho.meti.go.jp/committee/council/basic_policy_subcommittee/#system_kouchiku"}
-    ]
+    csv_path = "committees_エネ庁.csv"
+    
+    if not os.path.exists(csv_path):
+        print(f"エラー: {csv_path} が見つかりません。")
+    else:
+        scraper = MetiCommitteeScraper()
+        try:
+            with open(csv_path, mode='r', encoding='utf-8-sig', newline='') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    if row.get('enabled') != '1':
+                        continue
+                        
+                    name = row['name']
+                    main_url = row['main_url']
+                    
+                    scraper.process_committee_ENECHO(name, main_url)
+        finally:
+            scraper.close()
+            # メイン処理の終了ログはscraper.loggerを通じて出すか、直接print
+            print("\nすべて完了しました。詳細は log フォルダを確認してください。")
 
-    scraper = MetiCommitteeScraper()
-    try:
-        for c in COMMITTEES:
-            scraper.process_committee(c["name"], c["url"])
-    finally:
-        scraper.close()
-        print("\nすべて完了しました。")
