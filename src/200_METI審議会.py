@@ -91,7 +91,7 @@ class MetiCommitteeScraper:
             except: return True, update_text
         return True, update_text
 
-    def extract_papers(self, soup, base_url):
+    def extract_papers_meti(self, soup, base_url):
         links = []
         seen_files = set()
         
@@ -121,7 +121,7 @@ class MetiCommitteeScraper:
                     seen_files.add(href)
         return links
 
-    def process_committee_METI(self, name, main_url, extra_urls=None):
+    def process_committee_meti(self, name, main_url, extra_urls=None):
         self.logger.info(f"審議会開始: {name}") # loggerに変更
         file_path = self.output_dir / f"{name}.html"
         soup = self.get_soup(main_url, wait_time=1.5)
@@ -160,7 +160,7 @@ class MetiCommitteeScraper:
                         self.logger.info(f"    解析中: {title}")
                         sub_soup = self.get_soup(sub_url, wait_time=0.5)
                         if sub_soup:
-                            paper_links = self.extract_papers(sub_soup, sub_url)
+                            paper_links = self.extract_papers_meti(sub_soup, sub_url)
                             if paper_links:
                                 body_content.append(f"<h2>{title}</h2><ul>{''.join(paper_links)}</ul>")
                         seen_sub_urls.add(sub_url)
@@ -208,7 +208,7 @@ if __name__ == "__main__":
                         if url:
                             extra_urls.append(url)
                     
-                    scraper.process_committee_METI(name, main_url, extra_urls)
+                    scraper.process_committee_meti(name, main_url, extra_urls)
         finally:
             scraper.close()
             # メイン処理の終了ログはscraper.loggerを通じて出すか、直接print

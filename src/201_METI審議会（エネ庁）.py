@@ -76,7 +76,7 @@ class MetiCommitteeScraper:
             self.logger.warning(f"ページ取得失敗: {url} ({e})")
             return bs4.BeautifulSoup(self.driver.page_source, 'lxml')
 
-    def extract_papers(self, soup, base_url):
+    def extract_papers_enecho(self, soup, base_url):
         """配布資料ページ等からPDFや動画リンクを抽出"""
         links = []
         seen = set()
@@ -95,7 +95,7 @@ class MetiCommitteeScraper:
                 seen.add(href)
         return links
 
-    def process_committee_ENECHO(self, name, main_url):
+    def process_committee_enecho(self, name, main_url):
         self.logger.info(f"審議会開始: {name}") # loggerに変更
         file_path = self.output_dir / f"{name}.html"
         parsed_url = urlparse(main_url)
@@ -151,7 +151,7 @@ class MetiCommitteeScraper:
                             self.logger.info(f"    解析中: {row_title}")
                             sub_soup = self.get_soup(sub_url, wait_time=0.6)
                             if sub_soup:
-                                row_links.extend(self.extract_papers(sub_soup, sub_url))
+                                row_links.extend(self.extract_papers_enecho(sub_soup, sub_url))
                         else:
                             # 直接リンク（議事録、YouTube、ニュース等）
                             if sub_url not in seen_urls:
