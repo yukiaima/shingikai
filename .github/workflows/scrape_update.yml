@@ -1,0 +1,41 @@
+name: Update Council HTMLs
+
+on:
+  schedule:
+    - cron: '0 0 * * *'   # 9:00 JST
+    - cron: '0 4 * * *'   # 13:00 JST
+    - cron: '0 9 * * *'   # 18:00 JST
+  workflow_dispatch:      # 手動実行ボタン
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install beautifulsoup4 selenium webdriver-manager lxml
+
+      - name: Run Scrapers
+        run: |
+          cd src
+          python 200_METI審議会.py
+          python 201_METI審議会（エネ庁）.py
+          python 300_監視等委審議会.py
+          python 400_GX実現に向けたカーボンプライシング専門ワーキンググループ.py
+          python 401_GX実行会議.py
+
+      - name: Commit and Push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "Auto-update HTMLs: $(date)" || exit 0
+          git push
