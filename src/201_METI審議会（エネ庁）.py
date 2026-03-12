@@ -196,7 +196,7 @@ if __name__ == "__main__":
                     name = row['name']
                     main_url = row['main_url']
                     
-                    scraper.process_committee_ENECHO(name, main_url)
+                    scraper.process_committee_enecho(name, main_url)
         finally:
             scraper.close()
             # メイン処理の終了ログはscraper.loggerを通じて出すか、直接print
