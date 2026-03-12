@@ -7,15 +7,19 @@ on:
     - cron: '0 9 * * *'   # 18:00 JST
   workflow_dispatch:      # 手動実行ボタン
 
+# Node.js 24への対応を強制する設定を追加
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # v3 から v4 へ
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5 # v4 から v5 へ
         with:
           python-version: '3.9'
 
