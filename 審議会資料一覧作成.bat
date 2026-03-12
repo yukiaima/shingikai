@@ -7,8 +7,7 @@ rem pythonコードを実行 ※終わったものは更新しない
 python 200_METI審議会.py
 python 201_METI審議会（エネ庁）.py
 python 300_監視等委審議会.py
-python 400_GX実現に向けたカーボンプライシング専門ワーキンググループ.py
-python 401_GX実行会議.py
+python 400_内閣府審議会.py
 
 rem 元のディレクトリへ移動
 cd ..
