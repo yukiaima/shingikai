@@ -17,26 +17,21 @@ class CommitteeScraper:
         self.driver = self._setup_driver()
 
     def _setup_logging(self):
-        self.log_dir = Path('log')
-        self.log_dir.mkdir(exist_ok=True)
-        log_file = self.log_dir / "latest_log.txt"
+        """ログの設定：ファイル保存を廃止し、コンソール出力のみに限定"""
         self.logger = logging.getLogger("CommitteeScraper")
         self.logger.setLevel(logging.INFO)
-        if self.logger.hasHandlers(): # 二重出力を防ぐためのハンドラクリア
+        
+        if self.logger.hasHandlers():
             self.logger.handlers.clear()
         
+        # 画面出力用 (ch: Console Handler) のみの設定
         formatter = logging.Formatter('%(asctime)s - %(message)s', datefmt='%H:%M:%S')
-        # 1. ファイル出力用 (fh: File Handler)
-        fh = logging.FileHandler(log_file, mode='a', encoding='utf-8')
-        fh.setFormatter(formatter)
-        # 2. コンソール出力用 (ch: Console Handler) 
         ch = logging.StreamHandler()
         ch.setFormatter(formatter)
-        # 両方のハンドラを追加することで、ファイルと画面の両方にログが出るようになります
-        self.logger.addHandler(fh)
+        
         self.logger.addHandler(ch)
         
-        # 区切り線を入れて開始
+        # 開始メッセージ
         self.logger.info("\n" + "="*50 + f"\n実行開始: {datetime.now()}\n" + "="*50)
 
     def _setup_driver(self):
