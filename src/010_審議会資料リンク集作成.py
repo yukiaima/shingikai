@@ -321,22 +321,31 @@ class CommitteeScraper:
             if not soup: return
             
             # メインページの解析
-            table_contents = self._parse_table_egc(soup, main_url) # url -> main_url に修正
+            table_contents = self._parse_table_egc(soup, main_url)
             body_content.extend(table_contents)
 
-            # アーカイブリンクの収集
+            # アーカイブリンク（過去の年度ページ）の収集
+            # 「第1回～第20回」や「2019年度」のようなリンクを探索
             archive_links = []
-            for a in soup.find_all('a', href=True): # href=Trueを追加
+            for a in soup.find_all('a', href=True):
                 link_text = a.get_text(strip=True)
-                if '第' in link_text and '回' in link_text and ('～' in link_text or '~' in link_text):
+                # 回数範囲指定、または年度指定があるリンクをアーカイブとみなす
+                if (('第' in link_text and '回' in link_text and ('～' in link_text or '~' in link_text)) or 
+                    (re.search(r'\d{4}年度', link_text))):
                     # ここで確実に絶対URLにする
                     archive_url = urljoin(main_url, a.get('href'))
                     if archive_url not in archive_links and archive_url != main_url:
                         archive_links.append(archive_url)
+            
+            # URLに含まれる番号を抽出して数値でソートするキー関数
+            def get_sort_key(url):
+                nums = re.findall(r'\d+', url)
+                return int(nums[-1]) if nums else 0
 
-            # アーカイブのソートと解析
-            archive_links.sort(reverse=True)
-
+            # 1. まず数値の大きい順（新しい順）にソートしてリストを確定させる
+            archive_links.sort(key=get_sort_key, reverse=True)
+            
+            # 2. このリストをそのままループで回す（ソート済みのarchive_linksを直接使う）
             for sub_url in archive_links:
                 self.logger.info(f"    過去分アーカイブ解析中: {sub_url}")
                 sub_soup = self.get_soup(sub_url)
@@ -344,25 +353,23 @@ class CommitteeScraper:
                     sub_contents = self._parse_table_egc(sub_soup, sub_url)
                     body_content.extend(sub_contents)
                 
-            # 保存
             self.save_html("egmsc", name, "".join(body_content))  
             self.logger.info(f"    完了: {name}")
             
         except Exception as e:
-            # ログ出力時のラベルを修正 (METI -> 監視等委)
             self.logger.error(f"監視等委解析失敗({name}): {e}")
     
     def _parse_table_egc(self, soup, current_url):
-        results_with_date = []  # (日付数値, HTMLコンテンツ) を入れるリスト
+        results_with_date = []
+        # tableLayoutクラスを持つテーブルをすべて取得
         tables = soup.find_all('table', class_='tableLayout')
         
         def convert_jp_date_to_int(text):
             """和暦の日付を YYYYMMDD の整数に変換する"""
             patterns = [
                 r'(令和|平成)\s*(\d+|元)年\s*(\d+)月\s*(\d+)日',
-                r'(\d{4})年\s*(\d+)月\s*(\d+)日'  # 西暦の場合も考慮
+                r'(\d{4})年\s*(\d+)月\s*(\d+)日'
             ]
-            
             for pattern in patterns:
                 m = re.search(pattern, text)
                 if m:
@@ -373,71 +380,77 @@ class CommitteeScraper:
                         year = (1 if groups[1] == '元' else int(groups[1])) + 1988
                     else:
                         year = int(groups[0])
-                    
                     month = int(groups[-2])
                     day = int(groups[-1])
                     return year * 10000 + month * 100 + day
-            return 0  # 日付が見つからない場合
-
+            return 0
+        
         for target_table in tables:
+            # 判定条件を緩和：
+            # 1. summaryに「回」または「会合」または「委員会」が含まれる
+            # 2. またはテーブル内に「第」と「回」が含まれる
             summary_text = target_table.get('summary', '')
             table_full_text = target_table.get_text()
             
-            if "開催一覧" not in summary_text and "開催一覧" not in table_full_text:
+            is_target_table = any(kw in summary_text for kw in ["回", "会合", "委員会", "開催"]) or \
+                              ("第" in table_full_text and "回" in table_full_text)
+            
+            if not is_target_table:
                 continue
 
             for tr in target_table.find_all('tr'):
-                # 年度ナビゲーション行のスキップ
-                row_text = tr.get_text(strip=True)
-                if '第' in row_text and '回' in row_text and ('～' in row_text or '~' in row_text):
+                # ヘッダー行(th)や年度ナビリンク行をスキップ
+                if tr.find('th') or ('～' in tr.get_text() and '回' in tr.get_text()):
                     continue
 
                 tds = tr.find_all('td')
-                if len(tds) < 2: continue
+                if not tds: continue
 
                 row_title_parts = []
-                papers_html = ""
+                papers_html_list = []
                 other_links = []
 
                 for td in tds:
                     links = td.find_all('a')
                     text = td.get_text(strip=True)
+                    
                     if links:
                         for a in links:
                             href = urljoin(current_url, a.get('href'))
                             link_text = a.get_text(strip=True)
+                            
+                            # 配布資料ページへのリンクの場合
                             if "配布資料" in link_text or "配付資料" in link_text:
-                                papers_html = self._extract_papers_egc(href)
+                                html = self._extract_papers_egc(href)
+                                if html: papers_html_list.append(html)
                             else:
-                                other_links.append(f'<li><a href="{href}" target="_blank">{link_text}</a></li>')
+                                # 議事録、議事要旨、動画、個別報告等
+                                suffix = " (動画)" if "youtu" in href.lower() else ""
+                                other_links.append(f'<li><a href="{href}" target="_blank">{link_text}{suffix}</a></li>')
                     
+                    # リンク以外のテキスト（日付や「第〇回」）をタイトルパーツとして収集
                     if text:
-                        clean_text = text.replace("配布資料", "").replace("配付資料", "").replace("議事要旨", "").replace("議事録", "").replace("動画", "").strip()
+                        clean_text = re.sub(r'配布資料|配付資料|議事要旨|議事録|動画\d*|PDFファイル', '', text).strip()
                         if clean_text:
                             row_title_parts.append(clean_text)
 
-                if row_title_parts or papers_html:
-                    title = " ".join(row_title_parts)
-                    
-                    # 【修正】日付を数値化してソートキーにする
+                if row_title_parts or papers_html_list or other_links:
+                    title = " ".join(dict.fromkeys(row_title_parts)) # 重複除去
                     date_val = convert_jp_date_to_int(title)
                     
-                    self.logger.info(f"      解析中: {title if title else '詳細不明の回'}")
+                    self.logger.info(f"      解析中: {title}")
 
-                    content = f"<h2>{title}</h2>"
-                    link_section = []
-                    if papers_html: link_section.append(papers_html)
-                    if other_links: link_section.append("\n".join(other_links))
-                    
-                    if link_section:
-                        inner_html = '\n'.join(link_section)
-                        content += f"<ul>{inner_html}</ul>"
+                    content = f"<h2>{title}</h2><ul>"
+                    if other_links:
+                        content += "\n".join(other_links)
+                    if papers_html_list:
+                        content += "\n".join(papers_html_list)
+                    content += "</ul>"
                     
                     results_with_date.append((date_val, content))
         
-        # 日付数値で降順（新しい順）にソート
+        # 新しい順に並び替え
         results_with_date.sort(key=lambda x: x[0], reverse=True)
-        
         return [item[1] for item in results_with_date]
 
     def _extract_papers_egc(self, url):
