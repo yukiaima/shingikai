@@ -33,22 +33,19 @@ class CommitteeScraper:
         
         # 開始メッセージ
         self.logger.info("\n" + "="*50 + f"\n実行開始: {datetime.now()}\n" + "="*50)
-
+        
     def _setup_driver(self):
         options = Options()
-        # 基本設定
         options.add_argument('--headless=new')
         options.add_argument('--window-size=1920,1080')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-gpu')
         
-        # 高速化（画像オフ）
-        options.add_argument('--blink-settings=imagesEnabled=false')
-        
-        # 検知回避
+        # 判別回避パラメータ強化
+        options.add_argument('--lang=ja-JP,ja')
         options.add_argument('--disable-blink-features=AutomationControlled')
-        ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
         options.add_argument(f'user-agent={ua}')
         
         # 読み込み戦略（速さ優先）
@@ -56,11 +53,13 @@ class CommitteeScraper:
         
         driver = webdriver.Chrome(options=options)
         
-        # navigator.webdriver=true を隠す魔法
+        # WebDriver属性の完全隠蔽
         driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
-            'source': 'Object.defineProperty(navigator, "webdriver", {get: () => undefined})'
+            'source': '''
+                Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+                Object.defineProperty(navigator, 'languages', {get: () => ['ja-JP', 'ja']});
+            '''
         })
-        
         driver.set_page_load_timeout(30)
         return driver
     
@@ -80,8 +79,19 @@ class CommitteeScraper:
         except Exception as e:
             self.logger.warning(f"取得失敗: {url} ({e})")
             return None
-
+    
     def save_html(self, folder, name, body):
+        """HTMLファイルの出力（空データ時は既存ファイルを上書きせずスキップ）"""
+        if isinstance(body, (list, tuple)):
+            body = "".join(body)
+    
+        # -------------------------------------------------------------
+        # [保護ロジック] <h2> や <li> などの実データが含まれていない場合は中断
+        # -------------------------------------------------------------
+        if "<h2>" not in body and "<li>" not in body:
+            self.logger.warning(f"  [スキップ] 有効なデータが抽出できなかったため、上書き保存を中止しました: {name}")
+            return
+    
         out_dir = self.base_output_dir / folder
         out_dir.mkdir(parents=True, exist_ok=True)
         file_path = out_dir / f"{name}.html"
@@ -95,7 +105,7 @@ class CommitteeScraper:
         
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(html)
-        self.logger.info(f"  完了: {file_path}")
+        self.logger.info(f"   完了: {file_path}")
 
     # --- 各組織ごとの解析ロジック ---
     # --- METI ---
