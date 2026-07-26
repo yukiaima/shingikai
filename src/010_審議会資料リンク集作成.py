@@ -1,6 +1,7 @@
 import csv
 import os
 import time
+import random
 import logging
 import re
 from datetime import datetime
@@ -9,12 +10,29 @@ from urllib.parse import urljoin, urlparse
 import bs4
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 class CommitteeScraper:
     def __init__(self, base_output_dir='../'):
         self.base_output_dir = Path(base_output_dir)
         self._setup_logging()
+        self.request_count = 0
         self.driver = self._setup_driver()
+        
+    def _check_and_refresh_driver(self):
+        """一定リクエストごとにブラウザを再起動してセッションをクリーンアップ"""
+        self.request_count += 1
+        # 10〜15回に1回、セッションを再構築
+        if self.request_count % 12 == 0:
+            self.logger.info("  [セッションリフレッシュ] ブラウザを再起動してCookie・セッションをリセットします...")
+            try:
+                self.driver.quit()
+            except Exception:
+                pass
+            time.sleep(random.uniform(4.0, 7.0))
+            self.driver = self._setup_driver()
 
     def _setup_logging(self):
         """ログの設定：ファイル保存を廃止し、コンソール出力のみに限定"""
@@ -36,28 +54,35 @@ class CommitteeScraper:
         
     def _setup_driver(self):
         options = Options()
+        # 新しいヘッドレスモード
         options.add_argument('--headless=new')
         options.add_argument('--window-size=1920,1080')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-gpu')
         
-        # 判別回避パラメータ強化
-        options.add_argument('--lang=ja-JP,ja')
+        # --- 自動化検知回避のための追加設定 ---
         options.add_argument('--disable-blink-features=AutomationControlled')
-        ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
-        options.add_argument(f'user-agent={ua}')
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option('useAutomationExtension', False)
         
-        # 読み込み戦略（速さ優先）
+        # 一般的なデスクトップChromeのUser-Agentと各種ヘッダーの設定
+        ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+        options.add_argument(f'user-agent={ua}')
+        options.add_argument('--lang=ja-JP,ja')
+        
+        # 読み込み戦略
         options.page_load_strategy = 'eager'
         
         driver = webdriver.Chrome(options=options)
         
-        # WebDriver属性の完全隠蔽
+        # CDPコマンドによる高度な隠蔽処理
         driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
             'source': '''
                 Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-                Object.defineProperty(navigator, 'languages', {get: () => ['ja-JP', 'ja']});
+                Object.defineProperty(navigator, 'languages', {get: () => ['ja-JP', 'ja', 'en-US', 'en']});
+                Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
+                window.chrome = { runtime: {} };
             '''
         })
         driver.set_page_load_timeout(30)
@@ -71,14 +96,54 @@ class CommitteeScraper:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
     
-    def get_soup(self, url, wait_time=1.0):
-        try:
-            self.driver.get(url)
-            time.sleep(wait_time)
-            return bs4.BeautifulSoup(self.driver.page_source, 'lxml')
-        except Exception as e:
-            self.logger.warning(f"取得失敗: {url} ({e})")
-            return None
+    def get_soup(self, url, timeout=12, wait_time=None, max_retries=3):
+        """アクセス制限回避用のランダム待機・リトライ機能付きSoup取得"""
+        if wait_time is not None:
+            timeout = wait_time
+
+        # 呼び出しごとにリクエストカウントとブラウザリフレッシュのチェックを実行
+        self._check_and_refresh_driver()
+
+        for attempt in range(1, max_retries + 1):
+            try:
+                # 待機時間を少し長め＆ランダム（3.0〜6.0秒）に調整してアクセス間隔を散らす
+                sleep_sec = random.uniform(3.0, 6.0)
+                time.sleep(sleep_sec)
+                
+                self.driver.get(url)
+                
+                # ページ読み込み完了の確認
+                WebDriverWait(self.driver, timeout).until(
+                    EC.presence_of_element_located((By.TAG_NAME, "body"))
+                )
+                
+                page_title = self.driver.title or ""
+                page_source = self.driver.page_source or ""
+                
+                # WAF/ブロック画面の検知キーワードを追加
+                block_keywords = ["403 Forbidden", "Access Denied", "Block", "制限", "一時的にアクセス"]
+                if any(kw in page_title for kw in block_keywords) or "403 Forbidden" in page_source:
+                    raise PermissionError("WAF/IP制限によりアクセスが拒否されました")
+
+                return bs4.BeautifulSoup(page_source, 'lxml')
+
+            except Exception as e:
+                self.logger.warning(f"  [アクセス試行 {attempt}/{max_retries} 失敗]: {url} ({e})")
+                if attempt < max_retries:
+                    # ブロック検知時はしっかりと冷却期間（45秒〜90秒）を置く
+                    cool_down = random.uniform(45.0, 90.0) * attempt
+                    self.logger.info(f"  --> アクセス制限回避のため {cool_down:.1f} 秒間待機して再試行します...")
+                    time.sleep(cool_down)
+                    
+                    # 再試行前にドライバーを一度再起動してみる
+                    try:
+                        self.driver.quit()
+                    except Exception:
+                        pass
+                    self.driver = self._setup_driver()
+                else:
+                    self.logger.error(f"  [取得断念] 規定回数を超えました: {url}")
+                    return None
     
     def save_html(self, folder, name, body):
         """HTMLファイルの出力（空データ時は既存ファイルを上書きせずスキップ）"""
