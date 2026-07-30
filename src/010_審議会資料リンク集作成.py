@@ -24,8 +24,8 @@ class CommitteeScraper:
     def _check_and_refresh_driver(self):
         """一定リクエストごとにブラウザを再起動してセッションをクリーンアップ"""
         self.request_count += 1
-        # 10〜15回に1回、セッションを再構築
-        if self.request_count % 12 == 0:
+        # 50回に1回、セッションを再構築
+        if self.request_count % 50 == 0:
             self.logger.info("  [セッションリフレッシュ] ブラウザを再起動してCookie・セッションをリセットします...")
             try:
                 self.driver.quit()
@@ -74,6 +74,13 @@ class CommitteeScraper:
         # 読み込み戦略
         options.page_load_strategy = 'eager'
         
+        # 画像やCSSの読み込みを無効化して高速化
+        prefs = {
+            'profile.managed_default_content_settings.images': 2,
+            'profile.managed_default_content_settings.stylesheet': 2,
+        }
+        options.add_experimental_option('prefs', prefs)
+        
         driver = webdriver.Chrome(options=options)
         
         # CDPコマンドによる高度な隠蔽処理
@@ -106,8 +113,8 @@ class CommitteeScraper:
 
         for attempt in range(1, max_retries + 1):
             try:
-                # 待機時間を少し長め＆ランダム（3.0〜6.0秒）に調整してアクセス間隔を散らす
-                sleep_sec = random.uniform(3.0, 6.0)
+                # 待機時間を少し長め＆ランダム（0.8〜1.5秒）に調整してアクセス間隔を散らす
+                sleep_sec = random.uniform(0.8, 1.5)
                 time.sleep(sleep_sec)
                 
                 self.driver.get(url)
