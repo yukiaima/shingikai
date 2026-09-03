@@ -25,13 +25,13 @@ class CommitteeScraper:
         """一定リクエストごとにブラウザを再起動してセッションをクリーンアップ"""
         self.request_count += 1
         # 50回に1回、セッションを再構築
-        if self.request_count % 50 == 0:
+        if self.request_count % 30 == 0:
             self.logger.info("  [セッションリフレッシュ] ブラウザを再起動してCookie・セッションをリセットします...")
             try:
                 self.driver.quit()
             except Exception:
                 pass
-            time.sleep(random.uniform(4.0, 7.0))
+            time.sleep(random.uniform(0.5, 3.0))
             self.driver = self._setup_driver()
 
     def _setup_logging(self):
@@ -181,88 +181,132 @@ class CommitteeScraper:
 
     # --- 各組織ごとの解析ロジック ---
     # --- METI ---
-    def parse_meti(self, name, main_url, extra_urls=None): # extra_urlsを追加
-        self.logger.info(f"METI解析: {name}")
-        try:
-            soup = self.get_soup(main_url, wait_time=1.5)
-            if not soup: return
-    
-            # 更新チェック
-            should_proceed, update_text = self._check_update_meti(name, soup)
-            if not should_proceed:
-                self.logger.info(f"  ※ 更新なし: スキップ（{update_text}）")
-                return
-    
-            # 【内容抽出】（元: extract_papers_meti の移植）
-            # 比較用の生の値を data-update 属性に持たせておくと確実です
-            body_content = [
-                f"<h1>{name}</h1>",
-                f'<p><a href="{main_url}" target="_blank">>> 委員会公式サイト</a></p>',
-                f'<div id="update" data-update="{update_text}"><p>最終更新確認日: {update_text}</p></div><hr>'
-            ]
-            all_sources = [main_url] + (extra_urls if extra_urls else [])
-            seen_sub_urls = set()
-            
-            TARGET_KEYWORDS = ["第", "回", "中間", "報告", "結論", "需給", "対策", "整理", "まとめ", "戦略", "方針", "ロードマップ", "方向", "改革", "貫徹", "設計"]
+    def parse_meti(self, name, main_url, extra_urls=None):
+      self.logger.info(f'METI解析: {name}')
+      try:
+        soup = self.get_soup(main_url, wait_time=1.5)
+        if not soup:
+          return
 
-            for target_url in all_sources:
-                list_soup = self.get_soup(target_url)
-                main_area = (
-                    list_soup.find('div', id=['__main_contents', 'main_contents']) or 
-                    list_soup.find('div', class_=['main', 'main w1000']) or 
-                    list_soup
-                )
-                
-                if not main_area: continue
-                
-                for a_tag in main_area.find_all('a', href=True):
-                    title = a_tag.get_text(strip=True)
-                    sub_url = urljoin(target_url, a_tag.get('href'))
-                    is_target = any(kw in title for kw in TARGET_KEYWORDS)
-                    
-                    if is_target and sub_url not in seen_sub_urls:
-                        is_html = any(ext in sub_url.split('/')[-1] for ext in [".html", ".htm"]) or sub_url.endswith('/')
-                        
-                        if is_html:
-                            self.logger.info(f"    解析中: {title}")
-                            sub_soup = self.get_soup(sub_url, wait_time=0.5)
-                            if sub_soup:
-                                paper_links = self._extract_papers_meti(sub_soup, sub_url)
-                                if paper_links:
-                                    body_content.append(f"<h2>{title}</h2><ul>{''.join(paper_links)}</ul>")
-                            seen_sub_urls.add(sub_url)
-                        elif any(ext in sub_url.lower() for ext in ['.pdf', '.zip', '.xlsx']):
-                            body_content.append(f'<h2>{title}</h2><ul><li><a href="{sub_url}" target="_blank">資料を開く</a></li></ul>')
-                            seen_sub_urls.add(sub_url)
-                
-            # 【保存】
-            self.save_html("meti", name, "".join(body_content))  
-            self.logger.info(f"    完了: {name}")
-            
-        except Exception as e:
-            self.logger.error(f"METI解析失敗({name}): {e}")
+        # 1. 最終更新日チェック
+        should_proceed, update_text = self._check_update_meti(name, soup)
+        if not should_proceed:
+          self.logger.info(f'  ※ 更新なし: スキップ（{update_text}）')
+          return
+
+        body_content = [
+            f'<h1>{name}</h1>',
+            (
+                f'<p><a href="{main_url}" target="_blank">>>'
+                ' 委員会公式サイト</a></p>'
+            ),
+            (
+                f'<div id="update" data-update="{update_text}"><p>最終更新日:'
+                f' {update_text}</p></div><hr>'
+            ),
+        ]
+
+        all_sources = [main_url] + (extra_urls if extra_urls else [])
+        seen_sub_urls = set()
+
+        for target_url in all_sources:
+          list_soup = self.get_soup(target_url) if target_url != main_url else soup
+          if not list_soup:
+            continue
+
+          main_area = (
+              list_soup.find('div', id=['__main_contents', 'main_contents'])
+              or list_soup.find('div', class_=['main', 'main w1000'])
+              or list_soup
+          )
+
+          if not main_area:
+            continue
+
+          # 2. __main_contents 内の全 <a> タグを順序通りに抽出（条件を緩和して取りこぼし防止）
+          for a_tag in main_area.find_all('a', href=True):
+            href = a_tag.get('href')
+
+            # 「過去の資料はこちら」などのナビゲーション用リンクや問合せ先はスキップ
+            if (
+                '過去' in a_tag.get_text()
+                or '#__inquiry' in href
+                or 'index.html' in href
+                and href == main_url
+            ):
+              continue
+
+            title = a_tag.get_text(strip=True)
+            if not title:
+              continue
+
+            sub_url = urljoin(target_url, href)
+
+            if sub_url in seen_sub_urls:
+              continue
+
+            # PDFや圧縮ファイルが直接貼られている場合
+            if any(ext in sub_url.lower() for ext in ['.pdf', '.zip', '.xlsx']):
+              body_content.append(
+                  f'<h2>{title}</h2><ul><li><a href="{sub_url}"'
+                  ' target="_blank">資料を開く</a></li></ul>'
+              )
+              seen_sub_urls.add(sub_url)
+
+            # HTMLページ（各回の個別ページや中間とりまとめ）の場合
+            else:
+              self.logger.info(f'    解析中: {title}')
+              sub_soup = self.get_soup(sub_url, wait_time=0.5)
+              if sub_soup:
+                paper_links = self._extract_papers_meti(sub_soup, sub_url)
+                if paper_links:
+                  body_content.append(
+                      f"<h2>{title}</h2><ul>{''.join(paper_links)}</ul>"
+                  )
+                else:
+                  # 資料リンクが見つからない場合でも、該当ページへの直リンクを記載
+                  body_content.append(
+                      f'<h2>{title}</h2><ul><li><a href="{sub_url}"'
+                      ' target="_blank">ページを見る</a></li></ul>'
+                  )
+              seen_sub_urls.add(sub_url)
+
+        # 3. HTML保存
+        self.save_html('meti', name, ''.join(body_content))
+        self.logger.info(f'    完了: {name}')
+
+      except Exception as e:
+        self.logger.error(f'METI解析失敗({name}): {e}')
     
     def _check_update_meti(self, name, new_soup):
-        file_path = self.base_output_dir / "meti" / f"{name}.html"
-        current_update_div = new_soup.find('div', {'id': '__rdo_update'})
-        if not current_update_div: 
-            return True, "不明"
-        
-        new_date = current_update_div.get_text(strip=True)
-        
-        if file_path.exists():
-            try:
-                with open(file_path, 'r', encoding="utf-8") as f:
-                    old_soup = bs4.BeautifulSoup(f, 'lxml')
-                    old_update_div = old_soup.find('div', {'id': 'update'})
-                    # data-update属性から取得、なければテキストから判定
-                    old_date = old_update_div.get('data-update') if old_update_div else None
-                    
-                    if old_date == new_date:
-                        return False, new_date
-            except Exception:
-                return True, new_date
-        return True, new_date
+      file_path = self.base_output_dir / 'meti' / f'{name}.html'
+
+      # <div id="__rdo_update"> または <p> 内から日付テキストを抽出
+      update_div = new_soup.find(id='__rdo_update')
+      if not update_div:
+        return True, '不明'
+
+      # 「2026年8月3日」のような日付パターンを正規表現で抽出
+      raw_text = update_div.get_text(strip=True)
+      match = re.search(r'\d{4}年\d{1,2}月\d{1,2}日', raw_text)
+      new_date = match.group(0) if match else raw_text
+
+      if file_path.exists():
+        try:
+          with open(file_path, 'r', encoding='utf-8') as f:
+            old_soup = bs4.BeautifulSoup(f, 'lxml')
+            old_update_div = old_soup.find('div', {'id': 'update'})
+            old_date = (
+                old_update_div.get('data-update') if old_update_div else None
+            )
+
+            # 日付が完全に一致している場合は更新なしと判定してスキップ
+            if old_date and old_date == new_date:
+              return False, new_date
+        except Exception:
+          return True, new_date
+
+      return True, new_date
 
     def _extract_papers_meti(self, soup, base_url):
         links = []
