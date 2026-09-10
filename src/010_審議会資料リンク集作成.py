@@ -208,70 +208,40 @@ class CommitteeScraper:
 
         all_sources = [main_url] + (extra_urls if extra_urls else [])
         seen_sub_urls = set()
+        
+        TARGET_KEYWORDS = ["第", "回", "中間", "報告", "結論", "需給", "対策", "整理", "まとめ", "戦略", "方針", "ロードマップ", "方向", "改革", "貫徹", "設計"]
 
         for target_url in all_sources:
-          list_soup = self.get_soup(target_url) if target_url != main_url else soup
-          if not list_soup:
-            continue
+            list_soup = self.get_soup(target_url)
+            main_area = (
+                list_soup.find('div', id=['__main_contents', 'main_contents']) or 
+                list_soup.find('div', class_=['main', 'main w1000']) or 
+                list_soup
+            )
+            
+            if not main_area: continue
+            
+            for a_tag in main_area.find_all('a', href=True):
+                title = a_tag.get_text(strip=True)
+                sub_url = urljoin(target_url, a_tag.get('href'))
+                is_target = any(kw in title for kw in TARGET_KEYWORDS)
+                
+                if is_target and sub_url not in seen_sub_urls:
+                    is_html = any(ext in sub_url.split('/')[-1] for ext in [".html", ".htm"]) or sub_url.endswith('/')
+                    
+                    if is_html:
+                        self.logger.info(f"    解析中: {title}")
+                        sub_soup = self.get_soup(sub_url, wait_time=0.5)
+                        if sub_soup:
+                            paper_links = self._extract_papers_meti(sub_soup, sub_url)
+                            if paper_links:
+                                body_content.append(f"<h2>{title}</h2><ul>{''.join(paper_links)}</ul>")
+                        seen_sub_urls.add(sub_url)
+                    elif any(ext in sub_url.lower() for ext in ['.pdf', '.zip', '.xlsx']):
+                        body_content.append(f'<h2>{title}</h2><ul><li><a href="{sub_url}" target="_blank">資料を開く</a></li></ul>')
+                        seen_sub_urls.add(sub_url)
 
-          main_area = (
-              list_soup.find('div', id=['__main_contents', 'main_contents'])
-              or list_soup.find('div', class_=['main', 'main w1000'])
-              or list_soup
-          )
-
-          if not main_area:
-            continue
-
-          # 2. __main_contents 内の全 <a> タグを順序通りに抽出（条件を緩和して取りこぼし防止）
-          for a_tag in main_area.find_all('a', href=True):
-            href = a_tag.get('href')
-
-            # 「過去の資料はこちら」などのナビゲーション用リンクや問合せ先はスキップ
-            if (
-                '過去' in a_tag.get_text()
-                or '#__inquiry' in href
-                or 'index.html' in href
-                and href == main_url
-            ):
-              continue
-
-            title = a_tag.get_text(strip=True)
-            if not title:
-              continue
-
-            sub_url = urljoin(target_url, href)
-
-            if sub_url in seen_sub_urls:
-              continue
-
-            # PDFや圧縮ファイルが直接貼られている場合
-            if any(ext in sub_url.lower() for ext in ['.pdf', '.zip', '.xlsx']):
-              body_content.append(
-                  f'<h2>{title}</h2><ul><li><a href="{sub_url}"'
-                  ' target="_blank">資料を開く</a></li></ul>'
-              )
-              seen_sub_urls.add(sub_url)
-
-            # HTMLページ（各回の個別ページや中間とりまとめ）の場合
-            else:
-              self.logger.info(f'    解析中: {title}')
-              sub_soup = self.get_soup(sub_url, wait_time=0.5)
-              if sub_soup:
-                paper_links = self._extract_papers_meti(sub_soup, sub_url)
-                if paper_links:
-                  body_content.append(
-                      f"<h2>{title}</h2><ul>{''.join(paper_links)}</ul>"
-                  )
-                else:
-                  # 資料リンクが見つからない場合でも、該当ページへの直リンクを記載
-                  body_content.append(
-                      f'<h2>{title}</h2><ul><li><a href="{sub_url}"'
-                      ' target="_blank">ページを見る</a></li></ul>'
-                  )
-              seen_sub_urls.add(sub_url)
-
-        # 3. HTML保存
+        # HTML保存
         self.save_html('meti', name, ''.join(body_content))
         self.logger.info(f'    完了: {name}')
 
