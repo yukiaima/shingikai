@@ -24,8 +24,8 @@ class CommitteeScraper:
     def _check_and_refresh_driver(self):
         """一定リクエストごとにブラウザを再起動してセッションをクリーンアップ"""
         self.request_count += 1
-        # 50回に1回、セッションを再構築
-        if self.request_count % 30 == 0:
+        # 30回ごとにセッションを再構築 (初回 count=1 はスキップ)
+        if self.request_count > 1 and self.request_count % 30 == 0:
             self.logger.info("  [セッションリフレッシュ] ブラウザを再起動してCookie・セッションをリセットします...")
             try:
                 self.driver.quit()
